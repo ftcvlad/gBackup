@@ -6,7 +6,7 @@ using UnityEngine;
 [RequireComponent(typeof(MovementInput))]
 public class Player : MonoBehaviour {
 
-    public float movementSpeed = 100;
+    public float movementSpeed = 3.5f;
     public float jumpForce = 400f;
 
 

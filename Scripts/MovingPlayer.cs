@@ -6,9 +6,6 @@ public class MovingPlayer : NetworkBehaviour {
     private bool facingRight = true;
 
 
-   
-   
-
 
     [SerializeField]    private bool airControl = true;
     [SerializeField]     private LayerMask whatIsGround;
@@ -31,6 +28,13 @@ public class MovingPlayer : NetworkBehaviour {
     float cameraHeight = 0;
     Vector3 cameraOffset;
 
+
+    Rigidbody2D rb;
+
+    float currMovSpeed;
+    [SerializeField] int totalAvailableJumps = 2;
+    int currJumps = 0;
+
     private void Awake() {
 
        
@@ -41,19 +45,15 @@ public class MovingPlayer : NetworkBehaviour {
 
     void Start() {
 
+        //when network
         if (!isLocalPlayer) {
-
-           
-
             Destroy(transform.GetComponent<Player>());
             Destroy(transform.GetComponent<MovementInput>());
             Destroy(this);
-
-
-
             return;
         }
 
+        rb = GetComponent<Rigidbody2D>();
         //get player stuff
         groundCheck = transform.Find("GroundCheck");
         ceilingCheck = transform.Find("CeilingCheck");
@@ -74,42 +74,49 @@ public class MovingPlayer : NetworkBehaviour {
         moveCamera();
     }
 
-    private void FixedUpdate() {
+  
 
-        grounded = Physics2D.OverlapCircle(groundCheck.position, groundedRadius, whatIsGround);
+    public void Move(float move, bool jump) {//CALLED FROM FIXED UPDATE
 
         //anim.SetBool("Ground", grounded);
 
         //anim.SetFloat("vSpeed", GetComponent<Rigidbody2D>().velocity.y);
-      
-    }
 
+        // anim.SetFloat("Speed", Mathf.Abs(move));
 
-    public void Move(float move, bool jump) {
+        bool newGrounded = Physics2D.OverlapCircle(groundCheck.position, groundedRadius, whatIsGround);
+        if (newGrounded && !grounded) {//landed for the 1st fixedUpdate
+            currMovSpeed = p.movementSpeed;
+            currJumps = 0;
+        }
+        grounded = newGrounded;
 
+        if (!grounded ) {
+            if ((move > 0 && !facingRight) || (move < 0 && facingRight)) {
 
-        if (grounded || airControl) {
-
-           // anim.SetFloat("Speed", Mathf.Abs(move));
-
-            // Move the character
-          GetComponent<Rigidbody2D>().velocity = new Vector2(move * p.movementSpeed, GetComponent<Rigidbody2D>().velocity.y);
-
-      
-
-
-            if (move > 0 && !facingRight) Flip();
-            else if (move < 0 && facingRight) Flip();
+                currMovSpeed /=1;// 2;
+            }
         }
 
+        rb.velocity = new Vector2(move * currMovSpeed, rb.velocity.y);
+
+
+
+
+        if (move > 0 && !facingRight) Flip();
+        else if (move < 0 && facingRight) Flip();
 
       
+
         // Jump
-        if (grounded && jump/* && anim.GetBool("Ground")*/) {
+        if (currJumps< totalAvailableJumps && jump/* && anim.GetBool("Ground")*/) {
+            currJumps++;
            
-            grounded = false;
-          //  anim.SetBool("Ground", false);
-            GetComponent<Rigidbody2D>().AddForce(new Vector2(0f, p.jumpForce));
+            //  anim.SetBool("Ground", false);
+
+            rb.velocity = new Vector2(rb.velocity.x, 0);
+            rb.angularVelocity = 0;
+            rb.AddForce(new Vector2(0f, p.jumpForce));
         }
 
      
@@ -124,21 +131,29 @@ public class MovingPlayer : NetworkBehaviour {
 
         facingRight = !facingRight;
 
-        Vector3 theScale = playerGraphics.localScale;
-        theScale.x *= -1;
-        playerGraphics.localScale = theScale;
+
+        transform.localScale = new Vector3(transform.localScale.x * -1, transform.localScale.y,transform.localScale.z);
     }
 
+    public float heightDamping = 2.0f;
 
     void moveCamera() {
 
         if (isLocalPlayer) {//this is called once from LateUpdate before the script is deleted (or hz why) (isLocalPlayer==false)
-            Vector3 newPos = new Vector3(transform.position.x + cameraOffset.x, transform.position.y + cameraOffset.y, transform.position.z + cameraOffset.z);
-            mainCamera.position = newPos;
+            
+
+            float newYsmooth = Mathf.Lerp(mainCamera.position.y, transform.position.y + cameraOffset.y, heightDamping * Time.deltaTime);
+
+            newYsmooth = Mathf.Clamp(newYsmooth, 0, Mathf.Infinity);
+            
+             mainCamera.position = new Vector3(transform.position.x + cameraOffset.x, newYsmooth, transform.position.z + cameraOffset.z);
+            //mainCamera.LookAt(transform);
         }
-     
-        
-        //mainCamera.LookAt(transform);
+
+
+
     }
+
+
 
 }

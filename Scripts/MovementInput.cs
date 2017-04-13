@@ -24,7 +24,7 @@ using UnityStandardAssets.CrossPlatformInput;
         private void FixedUpdate()
         {
         
-            float h = CrossPlatformInputManager.GetAxis("Horizontal");
+            float h = CrossPlatformInputManager.GetAxisRaw("Horizontal");
 
        
             mover.Move(h, jump);
