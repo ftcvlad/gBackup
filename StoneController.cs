@@ -1,24 +1,21 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 
-public class CollisionHandler : MonoBehaviour {
+public class StoneController : NetworkBehaviour {
 
     public LayerMask whatToHit;
     public Transform stoneBreakParticlesPrefab;
 
-    GameObject stoneThrower;
-    
+    public GameObject stoneThrower;
+
+    [SerializeField] int damageAmount = 30;
+
+    public int teamNum;
 
     void Start() {
-        Transform t = this.transform;
-        while (t.parent != null) {
-            if (t.parent.tag == "Player") {
-                stoneThrower = t.parent.gameObject;
-                break;
-            }
-            t = t.parent.transform;
-        }
+   
        
         if (stoneThrower == null) {
             Debug.Log("Player-thrower, where are you?");
@@ -29,46 +26,49 @@ public class CollisionHandler : MonoBehaviour {
     void OnCollisionEnter2D(Collision2D collision) {
 
         foreach (ContactPoint2D contact in collision.contacts) {
-            Debug.DrawRay(contact.point, contact.normal, Color.white);
-
 
             //stone == otherCollider
             //rest == collider
 
-            Debug.Log(LayerMask.LayerToName(collision.otherCollider.gameObject.layer));
-
 
             string collLayerName = LayerMask.LayerToName(collision.collider.gameObject.layer);
             if (collLayerName=="Player") {
-
-
+                if (!isServer) {
+                    return;
+                }
                 if (collision.collider.gameObject != stoneThrower) {
                     //damage other player
+                    collision.collider.gameObject.GetComponent<Player>().takeDamage(damageAmount);
                 }
                 else {
                     Debug.LogError("Move stone spawn point away from player -- they collide!");
                 }
 
-
             }
             else if (collLayerName == "Ground") {
-                Destroy(this.gameObject);
+              
 
                 //particles
-
-               
                 Transform stoneBrPart = (Transform)Instantiate(stoneBreakParticlesPrefab, contact.point, Quaternion.FromToRotation(Vector3.right, contact.normal));
                 Destroy(stoneBrPart.gameObject, 1f);
-                
+               
 
             }
 
-           
 
-         
-            
+            //if (isServer) {
+            //    NetworkServer.Destroy(this.gameObject);
+            //}
+
+            Destroy(this.gameObject);
+
+
+
+
         }
 
 
     }
+
+
 }

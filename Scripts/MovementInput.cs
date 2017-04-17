@@ -18,14 +18,14 @@ using UnityStandardAssets.CrossPlatformInput;
         private void Update()
         {
             if(!jump) 
-                jump = CrossPlatformInputManager.GetButtonDown("Jump");
+                jump = (Input.GetKeyDown("up") || Input.GetKeyDown("w") );
         }
 
         private void FixedUpdate()
         {
         
             float h = CrossPlatformInputManager.GetAxisRaw("Horizontal");
-
+        
        
             mover.Move(h, jump);
             jump = false;

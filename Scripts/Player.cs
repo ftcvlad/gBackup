@@ -10,6 +10,10 @@ public class Player : MonoBehaviour {
     public float jumpForce = 400f;
 
 
+    public void takeDamage(int damage) {
+        Debug.Log(damage);
+    }
+
 }
 
 //    public int fallBoundary = -20;
