@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-[RequireComponent(typeof(MovementInput))]
+//[RequireComponent(typeof(MovementInput))]
 public class Player : MonoBehaviour {
 
     public float movementSpeed = 3.5f;

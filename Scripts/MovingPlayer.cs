@@ -35,6 +35,8 @@ public class MovingPlayer : NetworkBehaviour {
     [SerializeField] int totalAvailableJumps = 2;
     int currJumps = 0;
 
+
+    ScaleSpecialSnowflake sss;
     private void Awake() {
 
        
@@ -47,7 +49,7 @@ public class MovingPlayer : NetworkBehaviour {
 
         //when network
         if (!isLocalPlayer) {
-            Destroy(transform.GetComponent<Player>());
+         
             Destroy(transform.GetComponent<MovementInput>());
             Destroy(this);
             return;
@@ -72,6 +74,8 @@ public class MovingPlayer : NetworkBehaviour {
       
         cameraOffset = new Vector3(0, cameraHeight, -(Mathf.Abs(transform.position.z) + cameraDistance));
         moveCamera();
+
+        sss = transform.GetComponent<ScaleSpecialSnowflake>();
     }
 
   
@@ -133,7 +137,17 @@ public class MovingPlayer : NetworkBehaviour {
 
 
         transform.localScale = new Vector3(transform.localScale.x * -1, transform.localScale.y,transform.localScale.z);
+
+
+        if (isServer) {
+            sss.RpcUpdateScaleClient(transform.localScale);
+        }
+        else if (isClient) {
+            sss.CmdUpdateScaleServer(transform.localScale);
+        }
     }
+
+    
 
     public float heightDamping = 2.0f;
 

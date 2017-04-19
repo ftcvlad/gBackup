@@ -8,22 +8,27 @@ public class StoneController : NetworkBehaviour {
     public LayerMask whatToHit;
     public Transform stoneBreakParticlesPrefab;
 
-    public GameObject stoneThrower;
+    [SyncVar] public GameObject playerStoneThrower;
 
     [SerializeField] int damageAmount = 30;
 
     public int teamNum;
 
+    Rigidbody2D rb;
     void Start() {
    
        
-        if (stoneThrower == null) {
+        if (playerStoneThrower == null) {
             Debug.Log("Player-thrower, where are you?");
         }
+
+        rb = transform.GetComponent<Rigidbody2D>();
     }
 
 
     void OnCollisionEnter2D(Collision2D collision) {
+
+    
 
         foreach (ContactPoint2D contact in collision.contacts) {
 
@@ -33,17 +38,16 @@ public class StoneController : NetworkBehaviour {
 
             string collLayerName = LayerMask.LayerToName(collision.collider.gameObject.layer);
             if (collLayerName=="Player") {
-                if (!isServer) {
-                    return;
+                if (isServer) {
+                    if (collision.collider.gameObject != playerStoneThrower) {
+                        //damage other player
+                        collision.collider.gameObject.GetComponent<Player>().takeDamage(damageAmount);
+                    }
+                    else {
+                        Debug.LogError("Move stone spawn point away from player -- they collide!");
+                    }
                 }
-                if (collision.collider.gameObject != stoneThrower) {
-                    //damage other player
-                    collision.collider.gameObject.GetComponent<Player>().takeDamage(damageAmount);
-                }
-                else {
-                    Debug.LogError("Move stone spawn point away from player -- they collide!");
-                }
-
+               
             }
             else if (collLayerName == "Ground") {
               
@@ -55,13 +59,12 @@ public class StoneController : NetworkBehaviour {
 
             }
 
-
-            //if (isServer) {
-            //    NetworkServer.Destroy(this.gameObject);
-            //}
-
-            Destroy(this.gameObject);
-
+            //once collided, keep it on same place for Stone transform to correctly be sent to lagging clients.
+            //Stone is destroyed by server after 5s
+            rb.velocity = Vector2.zero;
+            rb.gravityScale = 0;
+            transform.GetComponent<SpriteRenderer>().enabled = false;
+            transform.GetComponent<CircleCollider2D>().enabled = false;
 
 
 

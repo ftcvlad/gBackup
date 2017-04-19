@@ -31,22 +31,24 @@ public class ThrowStone : NetworkBehaviour {
 
     GameObject ThrownStonesParent;
 
-    Transform stoneThrower;
-   
+    Transform arm;
 
+
+ 
+  
     void Start() {
-
+  
        
-
         if (stonePref == null) {
             Debug.Log("No stone prefab added");
             return;
         }
         stoneMass = stonePref.GetComponent<Rigidbody2D>().mass;
-        stoneThrower = transform.Find("stoneThrower");
+        arm = transform.Find("arm");
 
-        start = (Transform)stoneThrower.Find("startDirection");
-        end = (Transform)stoneThrower.Find("endDirection");
+        start = (Transform)arm.Find("startDirection");
+        end = (Transform)arm.Find("endDirection");
+
 
         ThrownStonesParent = GameObject.Find("GroupThrownStones");
 
@@ -59,27 +61,22 @@ public class ThrowStone : NetworkBehaviour {
             }
         }
 
-       
 
 
-        if (isServer) {
-            // get assetId on an existing prefab
+
+        if (!isServer && isLocalPlayer) {//register custom spawn functions on clients
             NetworkHash128 stoneAssetId = stonePref.GetComponent<NetworkIdentity>().assetId;
-
-            // register handlers for an existing prefab you'd like to custom spawn
             ClientScene.RegisterSpawnHandler(stoneAssetId, SpawnStone, UnSpawnStone);
         }
 
-       
+
 
 
     }
 
-    public GameObject  SpawnStone(Vector3 position, NetworkHash128 assetId) {
-        Debug.Log("I am called, mat' va6u!");
-        GameObject stone = (GameObject)Instantiate(stonePref, stoneThrower.position, stoneThrower.rotation);
-        stone.GetComponent<StoneController>().stoneThrower = stoneThrower.gameObject;
-        stone.GetComponent<StoneController>().teamNum = 69;
+    public GameObject SpawnStone(Vector3 position, NetworkHash128 assetId) {
+        GameObject stone = (GameObject)Instantiate(stonePref,position, Quaternion.identity);
+        stone.transform.parent = ThrownStonesParent.transform;
         return stone;
     }
 
@@ -104,10 +101,10 @@ public class ThrowStone : NetworkBehaviour {
         if (Mathf.Abs(Input.GetAxis("Mouse ScrollWheel"))>0) {
        
             float deltaRot = Input.GetAxis("Mouse ScrollWheel") * Time.deltaTime * 50*100;
-            float currAngle = stoneThrower.localEulerAngles.z;
+            float currAngle = arm.localEulerAngles.z;
             currAngle = (currAngle > 180) ? currAngle - 360 : currAngle;
             if (Mathf.Abs(currAngle + deltaRot) < maxBendAngle) {
-                stoneThrower.Rotate(new Vector3(0, 0, deltaRot));
+                arm.Rotate(new Vector3(0, 0, deltaRot));
             }
          
         }
@@ -127,7 +124,7 @@ public class ThrowStone : NetworkBehaviour {
 
       
         if (isDrawTrajectory) {
-            drawTraj(stoneThrower.position, (end.position - start.position).normalized * stoneSpeed * Time.fixedDeltaTime / stoneMass);
+            drawTraj(arm.position, (end.position - start.position).normalized * stoneSpeed * Time.fixedDeltaTime / stoneMass);
         }
         
 
@@ -145,36 +142,40 @@ public class ThrowStone : NetworkBehaviour {
    
     [Command]
     public void CmdThrowStone() {
-        GameObject stone = Instantiate(stonePref, stoneThrower.position, stoneThrower.rotation);//Start on it not called before the method returns!
-        stone.GetComponent<StoneController>().stoneThrower = stoneThrower.gameObject;
+
+      
+
+        GameObject stone = Instantiate(stonePref, arm.position, arm.rotation);//Start on it not called before the method returns!
+        stone.GetComponent<StoneController>().playerStoneThrower = arm.parent.gameObject;
 
 
        // RpcTotalDebug(stone.GetComponent<StoneController>().stoneThrower!=null);
 
-       // Debug.Log(stone.GetComponent<StoneController>().stoneThrower);
+     
         stone.transform.parent = ThrownStonesParent.transform;
         Rigidbody2D rb = stone.GetComponent<Rigidbody2D>();
 
         rb.velocity = (end.position - start.position).normalized * stoneSpeed * Time.fixedDeltaTime / (rb.mass);//same as rb.AddForce(v* stoneSpeed, ForceMode2D.Force);
 
-        NetworkServer.Spawn(stonePref);
+
+        NetworkServer.Spawn(stone);
 
         
-        StartCoroutine(WaitAndDestroy(stonePref));//if didn't collide with anything somehow 
+        StartCoroutine(WaitAndDestroy(stone));//1) if didn't collide with anything 2) if collided and was set invisible
    
     }
 
 
 
 
-    [ClientRpc]
-    void RpcTotalDebug(bool res) {
-        Debug.Log(res);
+    [Command]
+    void CmdServerLogClientMessage(string message) {
+        Debug.Log(message);
     }
 
     IEnumerator WaitAndDestroy(GameObject obj) {
         yield return new WaitForSeconds(5f);
-        NetworkServer.Destroy(obj);
+        NetworkServer.Destroy(obj);//destroys both on Server and Client
     }
 
 
