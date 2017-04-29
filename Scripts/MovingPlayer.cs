@@ -37,12 +37,7 @@ public class MovingPlayer : NetworkBehaviour {
 
 
     ScaleSpecialSnowflake sss;
-    private void Awake() {
-
-       
-
-       
-    }
+    Transform playerBody;
 
 
     void Start() {
@@ -57,11 +52,12 @@ public class MovingPlayer : NetworkBehaviour {
 
         rb = GetComponent<Rigidbody2D>();
         //get player stuff
-        groundCheck = transform.Find("GroundCheck");
-        ceilingCheck = transform.Find("CeilingCheck");
+        playerBody = transform.Find("PlayerBody");
+        groundCheck = playerBody.Find("GroundCheck");
+        ceilingCheck = playerBody.Find("CeilingCheck");
         anim = GetComponent<Animator>();
 
-        playerGraphics = transform.FindChild("Graphics");
+        playerGraphics = playerBody.Find("Graphics");
         if (playerGraphics == null) {
             Debug.LogError("Player has no graphics object!");
         }
@@ -76,6 +72,7 @@ public class MovingPlayer : NetworkBehaviour {
         moveCamera();
 
         sss = transform.GetComponent<ScaleSpecialSnowflake>();
+       
     }
 
   
@@ -136,14 +133,14 @@ public class MovingPlayer : NetworkBehaviour {
         facingRight = !facingRight;
 
 
-        transform.localScale = new Vector3(transform.localScale.x * -1, transform.localScale.y,transform.localScale.z);
+        playerBody.localScale = new Vector3(playerBody.localScale.x * -1, playerBody.localScale.y, playerBody.localScale.z);
 
 
         if (isServer) {
-            sss.RpcUpdateScaleClient(transform.localScale);
+            sss.RpcUpdateScaleClient(playerBody.localScale);
         }
         else if (isClient) {
-            sss.CmdUpdateScaleServer(transform.localScale);
+            sss.CmdUpdateScaleServer(playerBody.localScale);
         }
     }
 

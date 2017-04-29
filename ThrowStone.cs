@@ -8,11 +8,12 @@ public class ThrowStone : NetworkBehaviour {
 
     float timeToFire = 0;
     public float fireRate = 1;
-    public float stoneSpeed = 400;
+    public float stoneSpeed = 500;
 
     Transform start;
     Transform end;
     [SerializeField]   GameObject stonePref;
+    Rigidbody2D rb;
     float stoneMass;
 
     bool throwPending = false;//input in update, Physics in FixedUpdate
@@ -31,8 +32,9 @@ public class ThrowStone : NetworkBehaviour {
 
     GameObject ThrownStonesParent;
 
+    Player playerInst;
     Transform arm;
-
+    Transform playerBody;
 
  
   
@@ -43,9 +45,12 @@ public class ThrowStone : NetworkBehaviour {
             Debug.Log("No stone prefab added");
             return;
         }
-        stoneMass = stonePref.GetComponent<Rigidbody2D>().mass;
-        arm = transform.Find("arm");
+        rb = stonePref.GetComponent<Rigidbody2D>();
+        stoneMass =rb.mass;
 
+        playerInst = transform.GetComponent<Player>();
+        playerBody = transform.Find("PlayerBody");
+        arm = playerBody.Find("arm");
         start = (Transform)arm.Find("startDirection");
         end = (Transform)arm.Find("endDirection");
 
@@ -117,14 +122,30 @@ public class ThrowStone : NetworkBehaviour {
             }
         }
 
-        if (Input.GetButton("Fire1") && Time.time > timeToFire) {//GetButton true while mouse pressed!
-            timeToFire = Time.time + 1 / fireRate;
-            throwPending = true;
+
+        if (playerInst.numStonesPossessed > 0) {
+            if (Input.GetButton("Fire1") && Time.time > timeToFire) {//GetButton true while mouse pressed!
+                timeToFire = Time.time + 1 / fireRate;
+                throwPending = true;
+
+                ItemDisplayManager.updateStoneAmount(playerInst.numStonesPossessed - 1);
+                //server has correct number of stones for all players
+                //client has correct number of stones for himself
+
+                
+                if (!isServer) {
+                    playerInst.numStonesPossessed--;
+                }
+                
+                
+
+            }
         }
+        
 
       
-        if (isDrawTrajectory) {
-            drawTraj(arm.position, (end.position - start.position).normalized * stoneSpeed * Time.fixedDeltaTime / stoneMass);
+        if (isDrawTrajectory) {//arm.position
+            drawTraj(end.position, (end.position - start.position).normalized * stoneSpeed * Time.fixedDeltaTime / stoneMass);
         }
         
 
@@ -142,27 +163,30 @@ public class ThrowStone : NetworkBehaviour {
    
     [Command]
     public void CmdThrowStone() {
+       
+        if (playerInst.numStonesPossessed > 0) {//sort of for anti-cheating on client
+            playerInst.numStonesPossessed--;
 
-      
-
-        GameObject stone = Instantiate(stonePref, arm.position, arm.rotation);//Start on it not called before the method returns!
-        stone.GetComponent<StoneController>().playerStoneThrower = arm.parent.gameObject;
-
-
-       // RpcTotalDebug(stone.GetComponent<StoneController>().stoneThrower!=null);
-
-     
-        stone.transform.parent = ThrownStonesParent.transform;
-        Rigidbody2D rb = stone.GetComponent<Rigidbody2D>();
-
-        rb.velocity = (end.position - start.position).normalized * stoneSpeed * Time.fixedDeltaTime / (rb.mass);//same as rb.AddForce(v* stoneSpeed, ForceMode2D.Force);
+            GameObject stone = Instantiate(stonePref, end.position, arm.rotation);//Start on it not called before the method returns!
+            stone.GetComponent<StoneController>().playerTeamId = playerBody.parent.GetComponent<Player>().getTeamId();
 
 
-        NetworkServer.Spawn(stone);
 
-        
-        StartCoroutine(WaitAndDestroy(stone));//1) if didn't collide with anything 2) if collided and was set invisible
-   
+
+
+            stone.transform.parent = ThrownStonesParent.transform;
+            Rigidbody2D rb = stone.GetComponent<Rigidbody2D>();
+
+            rb.velocity = (end.position - start.position).normalized * stoneSpeed * Time.fixedDeltaTime / (rb.mass);//same as rb.AddForce(v* stoneSpeed, ForceMode2D.Force);
+
+
+            NetworkServer.Spawn(stone);
+
+
+            StartCoroutine(WaitAndDestroy(stone));//1) if didn't collide with anything 2) if collided and was set invisible
+
+        }
+
     }
 
 
@@ -203,6 +227,8 @@ public class ThrowStone : NetworkBehaviour {
                     for (int j=count;j< vertCount;j++ ) {
                         trajectoryPoints[j].GetComponent<SpriteRenderer>().enabled = false;
                     }
+                   
+                    //Debug.Log(count + "=="+ prevPos.ToString()+"=="+pos.ToString()+"=="+ Vector3.Distance(prevPos, pos));
                     break;
                 }
                 else {
@@ -218,7 +244,8 @@ public class ThrowStone : NetworkBehaviour {
 
             prevPos = pos;
 
-            velocity += Physics2D.gravity * Time.fixedDeltaTime/(stoneMass);
+           // Debug.Log(Physics2D.gravity+"--"+rb.gravityScale);
+            velocity += Physics2D.gravity * rb.gravityScale* Time.fixedDeltaTime/(stoneMass);
             pos += velocity * Time.fixedDeltaTime;
         }
 

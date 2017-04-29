@@ -5,15 +5,18 @@ using UnityEngine.Networking;
 
 public class ScaleSpecialSnowflake : NetworkBehaviour {
 
-
+    Transform playerBody;
+    void Start() {
+        playerBody = transform.Find("PlayerBody");
+    }
 
     [Command]
     public void CmdUpdateScaleServer(Vector3 newScale) {
-        transform.localScale = newScale;
+        playerBody.localScale = newScale;
     }
 
     [ClientRpc]
     public void RpcUpdateScaleClient(Vector3 newScale) {
-        transform.localScale = newScale;
+        playerBody.localScale = newScale;
     }
 }

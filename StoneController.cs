@@ -8,17 +8,17 @@ public class StoneController : NetworkBehaviour {
     public LayerMask whatToHit;
     public Transform stoneBreakParticlesPrefab;
 
-    [SyncVar] public GameObject playerStoneThrower;
+    [SyncVar] public int playerTeamId =-1;
 
     [SerializeField] int damageAmount = 30;
 
     public int teamNum;
-
+    
     Rigidbody2D rb;
     void Start() {
    
        
-        if (playerStoneThrower == null) {
+        if (playerTeamId == -1) {
             Debug.Log("Player-thrower, where are you?");
         }
 
@@ -28,10 +28,15 @@ public class StoneController : NetworkBehaviour {
 
     void OnCollisionEnter2D(Collision2D collision) {
 
-    
+            if (isServer) {
+                Debug.Log("collide!");
+            }
 
-        foreach (ContactPoint2D contact in collision.contacts) {
+     
 
+            ContactPoint2D contact = collision.contacts[0];//any contact point, can be >1
+
+          
             //stone == otherCollider
             //rest == collider
 
@@ -39,13 +44,18 @@ public class StoneController : NetworkBehaviour {
             string collLayerName = LayerMask.LayerToName(collision.collider.gameObject.layer);
             if (collLayerName=="Player") {
                 if (isServer) {
-                    if (collision.collider.gameObject != playerStoneThrower) {
+                    if (collision.collider.gameObject.GetComponent<Player>().getTeamId() != playerTeamId) {
                         //damage other player
-                        collision.collider.gameObject.GetComponent<Player>().takeDamage(damageAmount);
+                      
+                        collision.collider.gameObject.GetComponent<Player>().RpcTakeDamage(damageAmount);
                     }
                     else {
-                        Debug.LogError("Move stone spawn point away from player -- they collide!");
+                        Debug.Log("Player hits itself!");
+                    
+                        collision.collider.gameObject.GetComponent<Player>().RpcTakeDamage(damageAmount);
                     }
+
+                    Debug.Log("zz"+collision.collider.gameObject.GetComponent<Player>().getTeamId());
                 }
                
             }
@@ -68,7 +78,7 @@ public class StoneController : NetworkBehaviour {
 
 
 
-        }
+        
 
 
     }
