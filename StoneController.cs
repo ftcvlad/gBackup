@@ -28,11 +28,7 @@ public class StoneController : NetworkBehaviour {
 
     void OnCollisionEnter2D(Collision2D collision) {
 
-            if (isServer) {
-                Debug.Log("collide!");
-            }
-
-     
+          
 
             ContactPoint2D contact = collision.contacts[0];//any contact point, can be >1
 
@@ -44,16 +40,20 @@ public class StoneController : NetworkBehaviour {
             string collLayerName = LayerMask.LayerToName(collision.collider.gameObject.layer);
             if (collLayerName=="Player") {
                 if (isServer) {
-                    if (collision.collider.gameObject.GetComponent<Player>().getTeamId() != playerTeamId) {
+                    Player p = collision.collider.gameObject.GetComponent<Player>();
+
+                    if (p.getTeamId() != playerTeamId) {
                         //damage other player
                       
-                        collision.collider.gameObject.GetComponent<Player>().RpcTakeDamage(damageAmount);
+                        p.RpcTakeDamage(damageAmount);
+                        p.dropKey();
                     }
                     else {
                         Debug.Log("Player hits itself!");
                     
-                        collision.collider.gameObject.GetComponent<Player>().RpcTakeDamage(damageAmount);
-                    }
+                        p.RpcTakeDamage(damageAmount);
+                        p.dropKey();
+                }
 
                     Debug.Log("zz"+collision.collider.gameObject.GetComponent<Player>().getTeamId());
                 }

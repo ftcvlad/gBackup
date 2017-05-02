@@ -5,11 +5,14 @@ using System;
 using UnityEngine.Networking;
 
 
-public class GameManagerScript : NetworkBehaviour {//EXISTS ONLY ON SERVER
+public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
 
 
     [SerializeField]
-    GameObject itemStone;
+    GameObject itemStonePref;
+
+    [SerializeField]
+    GameObject keyPref;
 
     List<Transform> stone_spawnPositions = new List<Transform>();
     List<int> stone_freeIndexes = new List<int>();
@@ -20,36 +23,47 @@ public class GameManagerScript : NetworkBehaviour {//EXISTS ONLY ON SERVER
     float stone_TimeToSpawn = 3f;//every 3 sec check if need to spawn stone
     float stone_SpawnRate = 1 / 3f;
     int currStonesPresent = 0;
-
+    Transform stoneSpawnPointsFolder;
+    Transform keySpawnPointsFolder;
     void Start () {
 
+       
         if (!isServer) {
             Destroy(this);
         }
+        int currMillis = ((int)(DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) % 1000);
+        rg = new System.Random(currMillis);
 
-       
+
+        stoneSpawnPointsFolder = GameObject.Find("StoneSpawnPoints").transform;
         spawnInitialStones();
-        
-       
+
+        keySpawnPointsFolder = GameObject.Find("KeySpawnPoints").transform;
+        spawnKey();
     }
 
 
+    public void spawnKey() {
+        List<Transform> key_spawnPoints = new List<Transform>();
+        foreach (Transform child in keySpawnPointsFolder) {
+            key_spawnPoints.Add(child);
+        }
+        Transform loc = key_spawnPoints[rg.Next(0, key_spawnPoints.Count)];
 
+        GameObject key = Instantiate(keyPref, loc.position, Quaternion.identity);
+
+        key.GetComponent<itemKey>().isPickable = true;//on server
+        NetworkServer.Spawn(key);
+        transform.GetComponent<allGM>().RpcMakeKeyPickable();//on clients
+    }
    
     public void spawnInitialStones() {
 
-        GameObject allSsps = GameObject.Find("StoneSpawnPoints");
 
-        foreach (Transform child in allSsps.transform) {
+        foreach (Transform child in stoneSpawnPointsFolder) {
             stone_spawnPositions.Add(child);
             stone_freeIndexes.Add(stone_freeIndexes.Count);
         }
-       
-
-        int currMillis = ((int)(DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) % 1000);
-        
-        rg = new System.Random(currMillis);
-
        
         spawnNstones(stone_maxPresent);
         
@@ -69,9 +83,10 @@ public class GameManagerScript : NetworkBehaviour {//EXISTS ONLY ON SERVER
             ind = rg.Next(0, stone_freeIndexes.Count);
             spawnLoc = stone_spawnPositions[stone_freeIndexes[ind]];
            
-            GameObject newItemStone = Instantiate(itemStone, spawnLoc.position, Quaternion.identity);//Start on it not called before the method returns!
+            GameObject newItemStone = Instantiate(itemStonePref, spawnLoc.position, Quaternion.identity);//Start on it not called before the method returns!
             newItemStone.GetComponent<itemStone_idx>().spawnPointIndex = stone_freeIndexes[ind];
 
+            newItemStone.transform.parent = stoneSpawnPointsFolder;
             //spawn stones on clients
             NetworkServer.Spawn(newItemStone);
 

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
-
+using System;
 
 //[RequireComponent(typeof(MovementInput))]
 public class Player : NetworkBehaviour {
@@ -16,21 +16,121 @@ public class Player : NetworkBehaviour {
     public int numStonesPossessed;
 
     StatusBarManager statusBarManager;
-    GameManagerScript gmInst;
+    bool hasKey = false;
+
+    ItemDisplayManager itemDispMan;
+
+    [SerializeField]
+    GameObject keyPref;
+
+    System.Random rg = new System.Random(((int)(DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) % 1000));
 
     void Start() {
         currHealth = maxHealth;
         numStonesPossessed = 3;
         statusBarManager = transform.FindChild("StatusBar").GetComponent<StatusBarManager>();
+
+        
+        if (isLocalPlayer) {
+            itemDispMan = transform.Find("UIoverlay").Find("PersonalItemList").GetComponent<ItemDisplayManager>();
+        }
+        else {
+            itemDispMan = null;
+            Destroy(transform.Find("UIoverlay").gameObject);
+        }
         
 
-
+        
         if (isServer) {
-            gmInst = GameObject.Find("GM").GetComponent<GameManagerScript>();
             AllPlayerManager.addPlayer(this);
         }
+
        
+
     }
+
+   
+
+    
+
+  
+
+    public void dropKey() {
+        //Debug.Log("zzzzzzzzzzzzz");
+        //if (!isServer) {
+        //    Debug.Log("on client drop as well!");
+        //}
+        if (isServer && hasKey) {
+            GameObject key = Instantiate(keyPref, transform.position, Quaternion.identity);
+            key.GetComponent<Rigidbody2D>().velocity = new Vector2((float)rg.NextDouble() * 2 - 1, 1) * 10;
+            NetworkServer.Spawn(key);
+            RpcDropKey();
+        }
+
+    }
+
+    [ClientRpc]
+    void RpcDropKey() {//+
+        
+        //TODO: this should happen with every player on the same team
+       hasKey = false;
+        if (isLocalPlayer) {
+            itemDispMan.removeItem("key");
+        }
+    }
+
+
+
+
+    public void updateStoneAmount(int change) {
+
+        numStonesPossessed += change;
+        if (isLocalPlayer) {
+            itemDispMan.updateStoneAmount(numStonesPossessed);
+        }
+    }
+
+
+  
+
+    [ClientRpc]
+    public void RpcKeyFound() {
+       
+        hasKey = true;
+        if (isLocalPlayer) {
+            itemDispMan.addItem("key");
+        }
+
+        //TODO: and the same for every team member!
+    }
+
+
+
+
+
+    [ClientRpc]
+    public void RpcTakeDamage(int damage) {
+        takeDamage(damage);
+    }
+    void takeDamage(int damage) {
+      
+       
+        currHealth = Mathf.Max(0, currHealth - damage);
+        statusBarManager.updateHealthBar(currHealth, maxHealth);
+
+        if (!isServer) {
+            return;
+        }
+
+        if (currHealth <= 0) {
+            //die 
+            //RpcDied(); // remove prefab, enable camera follow some other prefab of choice
+        }
+    }
+
+
+    
+
 
     public void setTeamId(int id) {
         teamId = id;
@@ -40,78 +140,10 @@ public class Player : NetworkBehaviour {
         return teamId;
     }
 
-    [ClientRpc]
-    public void RpcTakeDamage(int damage) {
-        takeDamage(damage);
-    }
 
-    public void takeDamage(int damage) {
-      
+}
 
-
-        currHealth = Mathf.Max(0, currHealth - damage);
-        statusBarManager.updateHealthBar(currHealth, maxHealth);
-
-        if (!isServer) {
-            return;
-        }
-
-        
-
-        
-        if (currHealth <= 0) {
-            //die 
-            //RpcDied(); // remove prefab, enable camera follow some other prefab of choice
-        }
-
-
-    }
-
-
-    void OnCollisionEnter2D(Collision2D collision) {
-
-        ContactPoint2D contact = collision.contacts[0];//any contact point, can be >1
-
-
-        //stone == otherCollider
-        //rest == collider
-
-        GameObject collTarg = collision.collider.gameObject;
-        string collLayerName = LayerMask.LayerToName(collTarg.layer);
-       
-        if (collLayerName == "Item_to_pick_layer") {
-           
-            if (collTarg.tag == "item_stone") {
-
-                
-
-                if (isServer) {
-                    gmInst.stoneFreeSpawnPoint(collTarg.GetComponent<itemStone_idx>().spawnPointIndex);
-                }
-               
-                numStonesPossessed++;
-                if (isLocalPlayer) {
-                    ItemDisplayManager.updateStoneAmount(numStonesPossessed);
-                }
-
-                Destroy(collTarg);
-               
-
-                
-
-            }
-
-        }
-
-
-
-
-
-        }
-
-
-
-    }
+    
 
 //    public int fallBoundary = -20;
 //    public string deathSoundName = "deathVoice";

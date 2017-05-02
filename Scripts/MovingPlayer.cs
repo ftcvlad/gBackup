@@ -98,8 +98,8 @@ public class MovingPlayer : NetworkBehaviour {
                 currMovSpeed /=1;// 2;
             }
         }
-
-        rb.velocity = new Vector2(move * currMovSpeed, rb.velocity.y);
+        
+        rb.velocity = new Vector2(move * currMovSpeed, Mathf.Clamp(rb.velocity.y, -10, 10));//limit vertical acceleration
 
 
 

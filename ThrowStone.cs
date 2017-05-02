@@ -128,13 +128,14 @@ public class ThrowStone : NetworkBehaviour {
                 timeToFire = Time.time + 1 / fireRate;
                 throwPending = true;
 
-                ItemDisplayManager.updateStoneAmount(playerInst.numStonesPossessed - 1);
+                
+                
                 //server has correct number of stones for all players
                 //client has correct number of stones for himself
 
-                
+
                 if (!isServer) {
-                    playerInst.numStonesPossessed--;
+                    playerInst.updateStoneAmount(-1);
                 }
                 
                 
@@ -165,7 +166,7 @@ public class ThrowStone : NetworkBehaviour {
     public void CmdThrowStone() {
        
         if (playerInst.numStonesPossessed > 0) {//sort of for anti-cheating on client
-            playerInst.numStonesPossessed--;
+            playerInst.updateStoneAmount(-1);
 
             GameObject stone = Instantiate(stonePref, end.position, arm.rotation);//Start on it not called before the method returns!
             stone.GetComponent<StoneController>().playerTeamId = playerBody.parent.GetComponent<Player>().getTeamId();
