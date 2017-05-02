@@ -21,7 +21,7 @@ public class Player : NetworkBehaviour {
     ItemDisplayManager itemDispMan;
 
     [SerializeField]
-    GameObject keyPref;
+    GameObject keyPref_inactive;
 
     System.Random rg = new System.Random(((int)(DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) % 1000));
 
@@ -61,7 +61,7 @@ public class Player : NetworkBehaviour {
         //    Debug.Log("on client drop as well!");
         //}
         if (isServer && hasKey) {
-            GameObject key = Instantiate(keyPref, transform.position, Quaternion.identity);
+            GameObject key = Instantiate(keyPref_inactive, transform.position, Quaternion.identity);
             key.GetComponent<Rigidbody2D>().velocity = new Vector2((float)rg.NextDouble() * 2 - 1, 1) * 10;
             NetworkServer.Spawn(key);
             RpcDropKey();
@@ -90,7 +90,12 @@ public class Player : NetworkBehaviour {
         }
     }
 
-
+    public void keyFound() {
+        hasKey = true;
+        if (isLocalPlayer) {
+            itemDispMan.addItem("key");
+        }
+    }
   
 
     [ClientRpc]

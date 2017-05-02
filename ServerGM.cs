@@ -12,7 +12,7 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
     GameObject itemStonePref;
 
     [SerializeField]
-    GameObject keyPref;
+    GameObject keyPref_active;
 
     List<Transform> stone_spawnPositions = new List<Transform>();
     List<int> stone_freeIndexes = new List<int>();
@@ -50,11 +50,12 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
         }
         Transform loc = key_spawnPoints[rg.Next(0, key_spawnPoints.Count)];
 
-        GameObject key = Instantiate(keyPref, loc.position, Quaternion.identity);
+        GameObject key = Instantiate(keyPref_active, loc.position, Quaternion.identity);
 
         key.GetComponent<itemKey>().isPickable = true;//on server
         NetworkServer.Spawn(key);
-        transform.GetComponent<allGM>().RpcMakeKeyPickable();//on clients
+       
+       // transform.GetComponent<allGM>().RpcMakeKeyPickable();//on clients
     }
    
     public void spawnInitialStones() {
