@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 using System;
+using UnityEngine.UI;
 
 //[RequireComponent(typeof(MovementInput))]
 public class Player : NetworkBehaviour {
@@ -13,10 +14,11 @@ public class Player : NetworkBehaviour {
     public int maxHealth = 100;
     int currHealth;
     int teamId;
-    public int numStonesPossessed;
+    [SyncVar] int playerId;
+    [SyncVar(hook = "updateStoneTileHook")] public int numStonesPossessed = 3;
 
     StatusBarManager statusBarManager;
-    bool hasKey = false;
+    public bool hasKey = false;
 
     ItemDisplayManager itemDispMan;
 
@@ -26,40 +28,39 @@ public class Player : NetworkBehaviour {
     System.Random rg = new System.Random(((int)(DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) % 1000));
 
     void Start() {
-        currHealth = maxHealth;
-        numStonesPossessed = 3;
-        statusBarManager = transform.FindChild("StatusBar").GetComponent<StatusBarManager>();
 
-        
-        if (isLocalPlayer) {
-            itemDispMan = transform.Find("UIoverlay").Find("PersonalItemList").GetComponent<ItemDisplayManager>();
-        }
-        else {
-            itemDispMan = null;
-            Destroy(transform.Find("UIoverlay").gameObject);
-        }
-        
-
-        
         if (isServer) {
             AllPlayerManager.addPlayer(this);
         }
 
+        currHealth = maxHealth;
        
+        statusBarManager = transform.FindChild("StatusBar").GetComponent<StatusBarManager>();
 
+        itemDispMan = transform.Find("UIoverlay").Find("PersonalItemList").GetComponent<ItemDisplayManager>();
+        Transform uioverlay = transform.Find("UIoverlay");
+        if (!isLocalPlayer) {
+            uioverlay.Find("ObservingMessage").Find("Text").GetComponent<Text>().text = "Observing player " + playerId + ". Press n to switch to next player.";
+        }
+        else {
+            Destroy(uioverlay.Find("ObservingMessage").gameObject);
+        }
+
+        
     }
 
-   
+    public override void OnStartLocalPlayer() {
+        //GetComponent().material.color = Color.blue;
+        allGM.localPlayerNetId = transform.GetComponent<NetworkIdentity>().netId;
+    }
 
     
-
   
 
+
+
     public void dropKey() {
-        //Debug.Log("zzzzzzzzzzzzz");
-        //if (!isServer) {
-        //    Debug.Log("on client drop as well!");
-        //}
+      
         if (isServer && hasKey) {
             GameObject key = Instantiate(keyPref_inactive, transform.position, Quaternion.identity);
             key.GetComponent<Rigidbody2D>().velocity = new Vector2((float)rg.NextDouble() * 2 - 1, 1) * 10;
@@ -74,40 +75,38 @@ public class Player : NetworkBehaviour {
         
         //TODO: this should happen with every player on the same team
        hasKey = false;
-        if (isLocalPlayer) {
-            itemDispMan.removeItem("key");
-        }
+       itemDispMan.removeItem("key");
+        
     }
 
 
-
-
-    public void updateStoneAmount(int change) {
-
-        numStonesPossessed += change;
-        if (isLocalPlayer) {
-            itemDispMan.updateStoneAmount(numStonesPossessed);
-        }
+    public void updateStoneTileHook(int newStoneNum) {
+        itemDispMan.updateStoneAmount(newStoneNum);
     }
+
+    //public void setStonesPossessed(int newAmount) {
+    //    numStonesPossessed = newAmount;
+    //    itemDispMan.updateStoneAmount(numStonesPossessed);
+    //}
 
     public void keyFound() {
         hasKey = true;
-        if (isLocalPlayer) {
-            itemDispMan.addItem("key");
-        }
+      
+        itemDispMan.addItem("key");
+       
     }
   
 
-    [ClientRpc]
-    public void RpcKeyFound() {
+    //[ClientRpc]
+    //public void RpcKeyFound() {
        
-        hasKey = true;
-        if (isLocalPlayer) {
-            itemDispMan.addItem("key");
-        }
+    //    hasKey = true;
+    //    if (isLocalPlayer) {
+    //        itemDispMan.addItem("key");
+    //    }
 
-        //TODO: and the same for every team member!
-    }
+    //    //TODO: and the same for every team member!
+    //}
 
 
 
@@ -145,6 +144,13 @@ public class Player : NetworkBehaviour {
         return teamId;
     }
 
+    public void setPlayerId(int id) {
+        playerId = id;
+    }
+
+    public int getPlayerId() {
+        return playerId;
+    }
 
 }
 

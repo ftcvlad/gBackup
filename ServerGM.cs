@@ -118,9 +118,47 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
                 spawnNstones(1);
             }
         }
-
-
-
     }
 
+
+    
+
+    public IEnumerator finishLevel() {
+        yield return new WaitForSeconds(2f);
+
+
+        //change scene
+      
+
+        GameObject go = GameObject.FindGameObjectWithTag("SingleNetworkManager");
+      
+        if (go.name == "NetMan") {//development
+
+            go.GetComponent<NetworkManager>().ServerChangeScene("shop1");
+        }
+        else if (go.name == "LobbyManager") {//production :)
+            go.GetComponent<NetworkLobbyManager>().ServerChangeScene("shop1");
+        }
+    }
+
+    public IEnumerator playerDeadOrFinished(Player p) {
+        yield return new WaitForSeconds(2f);
+
+
+
+        AllPlayerManager.givePlayerToObserve(p.netId);
+
+
+        //Destroy(p.gameObject);
+    }
+
+   
+
+   
+}
+
+
+public class MyMessage : MessageBase {
+    public NetworkInstanceId netId;
+   
 }

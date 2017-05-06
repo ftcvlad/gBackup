@@ -5,7 +5,7 @@ using UnityEngine.Networking;
 
 public class itemKey : NetworkBehaviour {
 
-    //[HideInInspector]
+    [HideInInspector]
     public bool isPickable;
 
 	void Start () {
@@ -15,15 +15,10 @@ public class itemKey : NetworkBehaviour {
 
     void OnTriggerEnter2D(Collider2D other) {//when player finds key
 
-        //if (isServer && isPickable ) {
-        //    other.GetComponent<Player>().RpcKeyFound();
-        //    Destroy(this.gameObject);
-        //}
-        Debug.Log("I am client and I found key1");
+       
         if (isPickable) {
-            Debug.Log("I am client and I found key2");
+           
             other.GetComponent<Player>().keyFound();
-            //this.gameObject.SetActive(false);
             transform.GetComponent<BoxCollider2D>().enabled = false;
             transform.Find("collider").GetComponent<SpriteRenderer>().enabled = false;
            

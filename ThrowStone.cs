@@ -134,9 +134,9 @@ public class ThrowStone : NetworkBehaviour {
                 //client has correct number of stones for himself
 
 
-                if (!isServer) {
-                    playerInst.updateStoneAmount(-1);
-                }
+                //if (!isServer) {
+                //    playerInst.updateStoneAmount(-1);
+                //}
                 
                 
 
@@ -166,7 +166,8 @@ public class ThrowStone : NetworkBehaviour {
     public void CmdThrowStone() {
        
         if (playerInst.numStonesPossessed > 0) {//sort of for anti-cheating on client
-            playerInst.updateStoneAmount(-1);
+           // playerInst.updateStoneAmount(-1);
+            playerInst.numStonesPossessed -= 1;//syncVar changed, and hook called on server and clients
 
             GameObject stone = Instantiate(stonePref, end.position, arm.rotation);//Start on it not called before the method returns!
             stone.GetComponent<StoneController>().playerTeamId = playerBody.parent.GetComponent<Player>().getTeamId();

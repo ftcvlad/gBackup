@@ -23,6 +23,7 @@ public class ItemDisplayManager : MonoBehaviour {
 
     void Start () {
 
+        Debug.Log("itemdm start called!");
        
         stonesTile = transform.Find("StonesTile");
       
@@ -32,6 +33,22 @@ public class ItemDisplayManager : MonoBehaviour {
         allItems.Add(new Tuple<string, Transform>("stones",stonesTile));//always [0] element
 
         updateStoneAmount(3);
+
+        //disable UIoverlay if not local player
+        Transform current = transform;
+        Transform parentPlayer;
+        while (true) {
+            if (current.parent.tag == "Player") {
+                parentPlayer = current.parent;
+                break;
+            }
+            current = current.parent.transform;
+        }
+
+        if (parentPlayer.GetComponent<Player>().isLocalPlayer == false) {
+            parentPlayer.Find("UIoverlay").gameObject.SetActive(false);
+        }
+
     }
 	
 	public void updateStoneAmount(int val) {

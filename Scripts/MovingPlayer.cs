@@ -27,7 +27,7 @@ public class MovingPlayer : NetworkBehaviour {
     float cameraDistance = 10;
     float cameraHeight = 0;
     Vector3 cameraOffset;
-
+    public float heightDamping = 2.0f;
 
     Rigidbody2D rb;
 
@@ -42,11 +42,14 @@ public class MovingPlayer : NetworkBehaviour {
 
     void Start() {
 
-        //when network
+        
+        mainCamera = Camera.main.transform;
+
+        
         if (!isLocalPlayer) {
          
             Destroy(transform.GetComponent<MovementInput>());
-            Destroy(this);
+            this.enabled = false;
             return;
         }
 
@@ -64,8 +67,7 @@ public class MovingPlayer : NetworkBehaviour {
 
         p = transform.GetComponent<Player>();
 
-        //camera
-        mainCamera = Camera.main.transform;
+      
 
       
         cameraOffset = new Vector3(0, cameraHeight, -(Mathf.Abs(transform.position.z) + cameraDistance));
@@ -75,6 +77,19 @@ public class MovingPlayer : NetworkBehaviour {
        
     }
 
+    void OnEnable() {
+       
+        if (playerBody != null) {//after movingPlayer is enabled by viewer, make sure facingRight is correct
+            facingRight = playerBody.localScale.x > 0 ? true : false;
+        }
+       
+        cameraOffset = new Vector3(0, cameraHeight, -(Mathf.Abs(transform.position.z) + cameraDistance));
+     
+    }
+
+    void OnDisable() {
+       
+    }
   
 
     public void Move(float move, bool jump) {//CALLED FROM FIXED UPDATE
@@ -125,41 +140,37 @@ public class MovingPlayer : NetworkBehaviour {
 
 
     void LateUpdate() {
+        
         moveCamera();//after physics calculations finished!
     }
 
     private void Flip() {
 
         facingRight = !facingRight;
+        int factor = facingRight == true ? 1 : -1;
+
+        playerBody.localScale = new Vector3(Mathf.Abs(playerBody.localScale.x) * factor, playerBody.localScale.y, playerBody.localScale.z);
 
 
-        playerBody.localScale = new Vector3(playerBody.localScale.x * -1, playerBody.localScale.y, playerBody.localScale.z);
-
-
-        if (isServer) {
-            sss.RpcUpdateScaleClient(playerBody.localScale);
-        }
-        else if (isClient) {
-            sss.CmdUpdateScaleServer(playerBody.localScale);
-        }
+        
+        sss.CmdUpdateScaleServer(playerBody.localScale);
+        
     }
+
+   
 
     
 
-    public float heightDamping = 2.0f;
-
     void moveCamera() {
 
-        if (isLocalPlayer) {//this is called once from LateUpdate before the script is deleted (or hz why) (isLocalPlayer==false)
-            
 
+        if (mainCamera != null) {
             float newYsmooth = Mathf.Lerp(mainCamera.position.y, transform.position.y + cameraOffset.y, heightDamping * Time.deltaTime);
-
             newYsmooth = Mathf.Clamp(newYsmooth, 0, Mathf.Infinity);
-            
-             mainCamera.position = new Vector3(transform.position.x + cameraOffset.x, newYsmooth, transform.position.z + cameraOffset.z);
-            //mainCamera.LookAt(transform);
+            mainCamera.position = new Vector3(transform.position.x + cameraOffset.x, newYsmooth, transform.position.z + cameraOffset.z);
+
         }
+
 
 
 
