@@ -12,6 +12,7 @@ public class ObjectStoneBag : MonoBehaviour {
     Text minText;
     Text maxText;
     Text currText;
+    Text goldText;
     Slider slider;
     void Start () {
      
@@ -26,6 +27,7 @@ public class ObjectStoneBag : MonoBehaviour {
         minText = sliderArea.Find("MinText").GetComponent<Text>();
         maxText = sliderArea.Find("MaxText").GetComponent<Text>();
         currText =  sliderArea.Find("CurrentText").Find("text").GetComponent<Text>();
+        goldText = sliderArea.Find("CoinsLeft").Find("Text").GetComponent<Text>();
     }
 	
 	
@@ -43,8 +45,10 @@ public class ObjectStoneBag : MonoBehaviour {
                 }
             }
 
+
             //set min/max amount of stones that player can afford
             int maxAmountCanBuy = (int) Mathf.Floor(localPlayer.gold / stonePrice);
+            goldText.text = ""+localPlayer.gold;
             maxText.text = "" + maxAmountCanBuy;
             slider.maxValue = maxAmountCanBuy;
             currText.text = "0";
@@ -57,12 +61,15 @@ public class ObjectStoneBag : MonoBehaviour {
 
     public void OnSliderValueChange() {
         currText.text = ""+slider.value;
+        goldText.text = (localPlayer.gold - slider.value*stonePrice)+"";
     }
 
     public void OnOkButtonPressed() {
-       
+
 
         //buy stones
+
+        localPlayer.CmdBuyStones((int)slider.value, (int)slider.value*stonePrice);
 
         localPlayer.GetComponent<MovementInput>().enabled = true;
         uioverlay.gameObject.SetActive(false);

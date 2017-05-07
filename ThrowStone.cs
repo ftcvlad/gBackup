@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
-
+using UnityEngine.SceneManagement;
 public class ThrowStone : NetworkBehaviour {
 
 
@@ -40,6 +40,10 @@ public class ThrowStone : NetworkBehaviour {
   
     void Start() {
   
+        //DEVELOPEMENT
+        if (SceneManager.GetActiveScene().name=="shop1") {
+            this.enabled = false;
+        }//ZZZZZZZZZ
        
         if (stonePref == null) {
             Debug.Log("No stone prefab added");

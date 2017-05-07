@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
-using UnityEngine.SceneManagement;
+
 
 //ONLY USED ON SERVER, BUT SPAWNED EVERYWHERE 
 public class AllPlayerManager : NetworkBehaviour {
@@ -13,13 +13,57 @@ public class AllPlayerManager : NetworkBehaviour {
 
         ag = GameObject.Find("allGM").GetComponent<allGM>();
         NetworkServer.RegisterHandler(1001, OnGiveNextPlayerToObserve);
-        SceneManager.sceneLoaded += OnLevelFinishedLoading;
+        
     }
 
     static List<Player> allActivePlayers = new List<Player>();
     static List<Player> allFinishedPlayers = new List<Player>();
     static List<Player> allDeadPlayers = new List<Player>();
 
+
+
+    public static PlayerResult calculateResults(int winningTeamId, int totalTeamPrize, int perPlaceGoldStep, int goldForUnfinished) {
+
+
+        //Rpc can't send list of objects :(
+
+        PlayerResult result = new PlayerResult();
+        int totalSize = allFinishedPlayers.Count + allActivePlayers.Count;
+        result.allPlayerIds = new int[totalSize];
+        result.allPlaces = new int[totalSize];
+        result.allGoldWon = new int[totalSize];
+
+
+
+        int nOfWinningTeam=0;
+        foreach(Player p in allFinishedPlayers) {
+            if (p.getTeamId() == winningTeamId) {
+                nOfWinningTeam++;
+            }
+        }
+        int goldPerPersonInTeam = (int)Mathf.Floor(totalTeamPrize/ nOfWinningTeam);
+        int totalPlayersFinished = allFinishedPlayers.Count;
+
+        int i = 0;
+        foreach (Player p in allFinishedPlayers) {
+
+            result.allPlayerIds[i] = p.getPlayerId();
+            result.allPlaces[i] = i + 1;
+            result.allGoldWon[i] = goldPerPersonInTeam + (totalPlayersFinished-i)*perPlaceGoldStep;
+            p.gold += result.allGoldWon[i];//[SyncVar]
+            i++;  
+        }
+
+        foreach (Player p in allActivePlayers) {
+            result.allPlayerIds[i] = p.getPlayerId();
+            result.allPlaces[i] = totalPlayersFinished + 1;
+            result.allGoldWon[i] = goldForUnfinished;
+            p.gold += result.allGoldWon[i];//[SyncVar]
+            i++;
+        }
+
+        return result;
+    }
 
 
     public static void finishRemainingPlayers() {
@@ -30,16 +74,10 @@ public class AllPlayerManager : NetworkBehaviour {
         allActivePlayers = null;
     }
 
-    void OnLevelFinishedLoading(Scene scene, LoadSceneMode mode) {
-      
-        if (scene.name == "shop1") {
-            StartCoroutine(activateAlivePlayers());
-        }
-        
-    }
+   
 
 
-    IEnumerator activateAlivePlayers() {
+    public static IEnumerator activateAlivePlayers() {
         //connection.isReady is set to false after ServerChangeScene, but then to true in OnConnection
         //so, it is true after 2 sec (rpc works again). + 2 sec is a nice pause before players are spawned
         yield return new WaitForSeconds(2f);

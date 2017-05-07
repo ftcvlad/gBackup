@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using UnityEngine.Networking;
-
+using UnityEngine.SceneManagement;
 
 public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
 
@@ -25,6 +25,8 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
     int currStonesPresent = 0;
     Transform stoneSpawnPointsFolder;
     Transform keySpawnPointsFolder;
+    allGM allGMInst;
+
     void Start() {
 
 
@@ -40,6 +42,10 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
 
         keySpawnPointsFolder = GameObject.Find("KeySpawnPoints").transform;
         spawnKey();
+
+        allGMInst = GameObject.Find("allGM").GetComponent<allGM>();
+
+        SceneManager.sceneLoaded += OnLevelFinishedLoading;
 
         UnityEngine.Object.DontDestroyOnLoad(this.gameObject);
     }
@@ -101,11 +107,8 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
 
 
     public void stoneFreeSpawnPoint(int index) {
-
         stone_freeIndexes.Add(index);
         currStonesPresent--;
-
-
     }
 
 
@@ -122,27 +125,57 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
         }
     }
 
+    void OnLevelFinishedLoading(Scene scene, LoadSceneMode mode) {
+
+        if (scene.name == "shop1") {
+            //
+
+            StartCoroutine(AllPlayerManager.activateAlivePlayers());
+        }
+
+    }
+
+
+    public IEnumerator finishLevel(int winningTeamId) {
+
+        string sceneName= SceneManager.GetActiveScene().name;
+        int totalTeamPrize = 0;
+        int perPlaceGoldStep = 0;
+        int goldForUnfinished = 0;
+        if (sceneName == "level1") {
+            totalTeamPrize = 400;
+            perPlaceGoldStep = 10;
+            goldForUnfinished = 5;
+        }
+
+        //calculate scores
+
+        PlayerResult result = AllPlayerManager.calculateResults(winningTeamId, totalTeamPrize, perPlaceGoldStep, goldForUnfinished);
+
+
+        allGMInst.RpcDisplayLevelResults(result.allPlaces, result.allPlayerIds, result.allGoldWon);
 
 
 
-    public IEnumerator finishLevel() {
+        //deactivate remaining players
+        AllPlayerManager.finishRemainingPlayers();
+
         yield return new WaitForSeconds(2f);
 
-
-        //change scene
-
+        
 
 
 
-        GameObject go = GameObject.FindGameObjectWithTag("SingleNetworkManager");
 
-        if (go.name == "NetMan") {//development
+        ////change scene
+        //GameObject go = GameObject.FindGameObjectWithTag("SingleNetworkManager");
 
-            go.GetComponent<NetworkManager>().ServerChangeScene("shop1");
-        }
-        else if (go.name == "LobbyManager") {//production :)
-            go.GetComponent<NetworkLobbyManager>().ServerChangeScene("shop1");
-        }
+        //if (go.name == "NetMan") {//development
+        //    go.GetComponent<NetworkManager>().ServerChangeScene("shop1");
+        //}
+        //else if (go.name == "LobbyManager") {//production :)
+        //    go.GetComponent<NetworkLobbyManager>().ServerChangeScene("shop1");
+        //}
     }
 
     public IEnumerator playerFinished(Player p) {
@@ -169,4 +202,12 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
         public NetworkInstanceId netId;
 
     }
+
+public struct PlayerResult {
+
+    public int[] allPlayerIds { get; set; }
+    public int[] allPlaces { get; set; }
+    public int[] allGoldWon { get; set; }
+
+}
 

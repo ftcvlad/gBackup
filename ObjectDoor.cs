@@ -30,8 +30,8 @@ public class ObjectDoor : MonoBehaviour {
 
                 if (AllPlayerManager.isLastInTeam(enteringPlayer.getTeamId())) {//last player finished --> change scene
 
-                    AllPlayerManager.finishRemainingPlayers();
-                    StartCoroutine(GameObject.Find("GM").GetComponent<ServerGM>().finishLevel());
+                   
+                    StartCoroutine(GameObject.Find("GM").GetComponent<ServerGM>().finishLevel(enteringPlayer.getTeamId()));
                 }
                 else {//still more players left in team
 

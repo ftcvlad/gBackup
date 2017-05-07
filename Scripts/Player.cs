@@ -12,12 +12,13 @@ public class Player : NetworkBehaviour {
     public float movementSpeed = 3.5f;
     public float jumpForce = 400f;
 
-    public int gold = 500;
+   
     public int maxHealth = 100;
     int currHealth;
     int teamId;
     [SyncVar] int playerId;
     [SyncVar(hook = "updateStoneTileHook")] public int numStonesPossessed = 3;
+    [SyncVar(hook = "updateGoldTileHook")] public int gold = 500;
     public bool isDead = false;
     public bool hasKey = false;
 
@@ -68,7 +69,7 @@ public class Player : NetworkBehaviour {
 
 
     
-
+    //ACTIVATE/DEACTIVATE PLAYER
 
     [ClientRpc]
     public void RpcDeactivatePlayer() {
@@ -120,6 +121,8 @@ public class Player : NetworkBehaviour {
         }
     }
 
+
+    //KEY
     public void dropKey() {
       
         if (isServer && hasKey) {
@@ -140,21 +143,11 @@ public class Player : NetworkBehaviour {
         
     }
 
-
-    public void updateStoneTileHook(int newStoneNum) {
-        itemDispMan.updateStoneAmount(newStoneNum);
-    }
-
-    //public void setStonesPossessed(int newAmount) {
-    //    numStonesPossessed = newAmount;
-    //    itemDispMan.updateStoneAmount(numStonesPossessed);
-    //}
-
     public void keyFound() {
         hasKey = true;
         itemDispMan.addItem("key");
     }
-  
+
     public void keyUsed() {
         hasKey = false;
         itemDispMan.removeItem("key");
@@ -162,7 +155,7 @@ public class Player : NetworkBehaviour {
 
     //[ClientRpc]
     //public void RpcKeyFound() {
-       
+
     //    hasKey = true;
     //    if (isLocalPlayer) {
     //        itemDispMan.addItem("key");
@@ -171,8 +164,33 @@ public class Player : NetworkBehaviour {
     //    //TODO: and the same for every team member!
     //}
 
+    //STONES
+
+    public void updateStoneTileHook(int newStoneNum) {
+        itemDispMan.updateStoneAmount(newStoneNum);
+    }
+
+    [Command]
+    public void CmdBuyStones(int stoneAmount, int cost) {
+        gold -= cost;
+        numStonesPossessed += stoneAmount;
+    }
+
+    //GOLD
+
+    public void updateGoldTileHook(int newGoldValue) {
+        itemDispMan.updateGold(newGoldValue);
+    }
+   
+
+    
+
+    
 
 
+
+    
+    //DAMAGE
 
 
     [ClientRpc]
@@ -196,7 +214,7 @@ public class Player : NetworkBehaviour {
     }
 
 
-    
+    //SETTERS/GETTERS
 
 
     public void setTeamId(int id) {

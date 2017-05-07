@@ -8,6 +8,7 @@ public class ItemDisplayManager : MonoBehaviour {
 
     Text stoneAmountText;
     Transform stonesTile;
+    Text goldText;
     Transform noStonesForeground;
 
     List<Tuple<string, Transform>>   allItems = new List<Tuple<string, Transform>>();
@@ -23,15 +24,16 @@ public class ItemDisplayManager : MonoBehaviour {
 
     void Start () {
 
-       
+        //stones init
         stonesTile = transform.Find("StonesTile");
-      
         stoneAmountText = stonesTile.Find("amountText").GetComponent<Text>() ;
         noStonesForeground = stonesTile.Find("noStonesForeground");
-
         allItems.Add(new Tuple<string, Transform>("stones",stonesTile));//always [0] element
-
         updateStoneAmount(3);
+
+        //gold init
+
+        goldText = transform.Find("Gold").Find("GoldText").GetComponent<Text>();
 
         //disable UIoverlay if not local player
         Transform current = transform;
@@ -49,6 +51,10 @@ public class ItemDisplayManager : MonoBehaviour {
         }
 
     }
+
+    public void updateGold(int newValue) {
+        goldText.text = newValue+"";
+    }
 	
 	public void updateStoneAmount(int val) {
         stoneAmountText.text = val+"";
@@ -62,10 +68,12 @@ public class ItemDisplayManager : MonoBehaviour {
 
     public void addItem(string itemName) {
 
-
+        
         if (itemName == "key") {
 
-            Vector2 position = new Vector2(allItems.Count * (offsetBetweenTiles+tileSideSize),0);
+           
+            
+            Vector2 position = new Vector2(allItems[0].second.localPosition.x + allItems.Count * (offsetBetweenTiles+tileSideSize),0);
 
             GameObject newItemStone = Instantiate(keyItemTilePref, position, Quaternion.identity);
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class RequestNextPlayerMessage : MessageBase {
     public NetworkInstanceId localPlayerNetId;
@@ -20,9 +21,15 @@ public class allGM : NetworkBehaviour {
 
     static bool canSwitchCameraView = false;
 
-    
+    Transform resultsui;
+    Transform table;
+
+    public GameObject rowPref;
     void Start() {
         NetworkManager.singleton.client.RegisterHandler(1000, switchPlayer);
+
+        resultsui = transform.Find("LevelResultsUI");
+        table = resultsui.Find("Results").Find("Table");
     }
 
 
@@ -45,8 +52,29 @@ public class allGM : NetworkBehaviour {
         }
     }
 
-   
+    [ClientRpc]
+    public void RpcDisplayLevelResults(int[] allPlaces, int[] allPlayerNames, int[] allGoldWon) {
 
+        //activate result frame
+        //add row for each player result
+
+        for (int i = 0; i < allPlaces.Length; i++) {
+            Debug.Log("place: " + allPlaces[i] + " playerID:" + allPlayerNames[i] + " gold:" + allGoldWon[i]);
+
+
+
+            GameObject g = GameObject.Instantiate(rowPref, table);
+            g.transform.Find("Place").Find("Text").GetComponent<Text>().text = ""+allPlaces[i];
+            g.transform.Find("PlayerName").Find("Text").GetComponent<Text>().text = "" + allPlayerNames[i];
+            g.transform.Find("GoldWon").Find("Text").GetComponent<Text>().text = "" + allGoldWon[i];
+
+            resultsui.gameObject.SetActive(true);
+        }
+
+
+       
+
+    }
 
 
     static void switchPlayer(NetworkMessage netMsg) {
