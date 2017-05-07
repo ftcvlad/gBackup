@@ -23,7 +23,6 @@ public class ItemDisplayManager : MonoBehaviour {
 
     void Start () {
 
-        Debug.Log("itemdm start called!");
        
         stonesTile = transform.Find("StonesTile");
       

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 
 public class RequestNextPlayerMessage : MessageBase {
     public NetworkInstanceId localPlayerNetId;
@@ -24,7 +25,7 @@ public class allGM : NetworkBehaviour {
         NetworkManager.singleton.client.RegisterHandler(1000, switchPlayer);
     }
 
- 
+
     void Update() {
 
         if (canSwitchCameraView) {
@@ -50,7 +51,7 @@ public class allGM : NetworkBehaviour {
 
     static void switchPlayer(NetworkMessage netMsg) {
 
-        Debug.Log("client received message!");
+      
         canSwitchCameraView = true;
 
         var msg = netMsg.ReadMessage<MyMessage>();

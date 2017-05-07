@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using System;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 //[RequireComponent(typeof(MovementInput))]
 public class Player : NetworkBehaviour {
@@ -11,34 +12,43 @@ public class Player : NetworkBehaviour {
     public float movementSpeed = 3.5f;
     public float jumpForce = 400f;
 
+    public int gold = 500;
     public int maxHealth = 100;
     int currHealth;
     int teamId;
     [SyncVar] int playerId;
     [SyncVar(hook = "updateStoneTileHook")] public int numStonesPossessed = 3;
-
-    StatusBarManager statusBarManager;
+    public bool isDead = false;
     public bool hasKey = false;
 
+    StatusBarManager statusBarManager;
     ItemDisplayManager itemDispMan;
+    Transform statusBar;
+    Transform uioverlay;
+    Transform playerBody;
 
     [SerializeField]
     GameObject keyPref_inactive;
 
     System.Random rg = new System.Random(((int)(DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) % 1000));
 
+    
+
     void Start() {
+
 
         if (isServer) {
             AllPlayerManager.addPlayer(this);
         }
 
         currHealth = maxHealth;
-       
-        statusBarManager = transform.FindChild("StatusBar").GetComponent<StatusBarManager>();
 
-        itemDispMan = transform.Find("UIoverlay").Find("PersonalItemList").GetComponent<ItemDisplayManager>();
-        Transform uioverlay = transform.Find("UIoverlay");
+        statusBar = transform.FindChild("StatusBar");
+        uioverlay = transform.Find("UIoverlay");
+        playerBody = transform.Find("PlayerBody");
+        statusBarManager = statusBar.GetComponent<StatusBarManager>();
+        itemDispMan = uioverlay.Find("PersonalItemList").GetComponent<ItemDisplayManager>();
+        
         if (!isLocalPlayer) {
             uioverlay.Find("ObservingMessage").Find("Text").GetComponent<Text>().text = "Observing player " + playerId + ". Press n to switch to next player.";
         }
@@ -46,18 +56,69 @@ public class Player : NetworkBehaviour {
             Destroy(uioverlay.Find("ObservingMessage").gameObject);
         }
 
-        
+
+        UnityEngine.Object.DontDestroyOnLoad(this.gameObject);
     }
 
     public override void OnStartLocalPlayer() {
+
         //GetComponent().material.color = Color.blue;
         allGM.localPlayerNetId = transform.GetComponent<NetworkIdentity>().netId;
     }
 
+
     
-  
 
 
+    [ClientRpc]
+    public void RpcDeactivatePlayer() {
+        deactivatePlayer();
+    }
+
+    [ClientRpc]
+    public void RpcActivatePlayer(Vector3 position) {
+      
+        if (this.isLocalPlayer) {
+            this.transform.position = position;
+        }
+        activatePlayer();
+    }
+
+    //cannot do p.SetActive(false) because then 1)Rpc cals will not work 2) NetworkTransform will not follow after reactivated (why??)
+    public void deactivatePlayer() {
+       
+        GetComponent<ThrowStone>().enabled = false;
+        GetComponent<PolygonCollider2D>().enabled = false;
+        statusBar.gameObject.SetActive(false);
+        uioverlay.gameObject.SetActive(false);
+        playerBody.gameObject.SetActive(false);
+        GetComponent<MovingPlayer>().enabled = false;//if someone was observing this player, camera just stops
+        if (isLocalPlayer) {
+            GetComponent<MovementInput>().enabled = false;
+        }
+    }
+
+    public void activatePlayer() {
+
+        string sceneName = SceneManager.GetActiveScene().name;
+
+        if (sceneName != "shop1") {
+            GetComponent<ThrowStone>().enabled = true;
+        }
+        
+        GetComponent<PolygonCollider2D>().enabled = true;
+        statusBar.gameObject.SetActive(true);
+        playerBody.gameObject.SetActive(true);
+
+        if (isLocalPlayer) {
+            uioverlay.gameObject.SetActive(true);
+            GetComponent<MovementInput>().enabled = true;
+            GetComponent<MovingPlayer>().enabled = true;
+        }
+        else {
+            GetComponent<MovingPlayer>().enabled = false;
+        }
+    }
 
     public void dropKey() {
       
@@ -91,11 +152,13 @@ public class Player : NetworkBehaviour {
 
     public void keyFound() {
         hasKey = true;
-      
         itemDispMan.addItem("key");
-       
     }
   
+    public void keyUsed() {
+        hasKey = false;
+        itemDispMan.removeItem("key");
+    }
 
     //[ClientRpc]
     //public void RpcKeyFound() {

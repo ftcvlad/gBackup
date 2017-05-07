@@ -25,9 +25,9 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
     int currStonesPresent = 0;
     Transform stoneSpawnPointsFolder;
     Transform keySpawnPointsFolder;
-    void Start () {
+    void Start() {
 
-       
+
         if (!isServer) {
             Destroy(this);
         }
@@ -40,6 +40,8 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
 
         keySpawnPointsFolder = GameObject.Find("KeySpawnPoints").transform;
         spawnKey();
+
+        UnityEngine.Object.DontDestroyOnLoad(this.gameObject);
     }
 
 
@@ -54,10 +56,10 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
 
         key.GetComponent<itemKey>().isPickable = true;//on server
         NetworkServer.Spawn(key);
-       
-       // transform.GetComponent<allGM>().RpcMakeKeyPickable();//on clients
+
+        // transform.GetComponent<allGM>().RpcMakeKeyPickable();//on clients
     }
-   
+
     public void spawnInitialStones() {
 
 
@@ -65,9 +67,9 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
             stone_spawnPositions.Add(child);
             stone_freeIndexes.Add(stone_freeIndexes.Count);
         }
-       
+
         spawnNstones(stone_maxPresent);
-        
+
     }
 
     public void spawnNstones(int n) {
@@ -76,14 +78,14 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
             n = stone_freeIndexes.Count;
         }
 
-        
+
         Transform spawnLoc;
         int ind;
         for (int i = 0; i < n; i++) {
-          
+
             ind = rg.Next(0, stone_freeIndexes.Count);
             spawnLoc = stone_spawnPositions[stone_freeIndexes[ind]];
-           
+
             GameObject newItemStone = Instantiate(itemStonePref, spawnLoc.position, Quaternion.identity);//Start on it not called before the method returns!
             newItemStone.GetComponent<itemStone_idx>().spawnPointIndex = stone_freeIndexes[ind];
 
@@ -99,39 +101,41 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
 
 
     public void stoneFreeSpawnPoint(int index) {
-        
+
         stone_freeIndexes.Add(index);
         currStonesPresent--;
-        
-        
+
+
     }
 
 
-    
+
     void Update() {
 
 
         if (Time.time > stone_TimeToSpawn) {//GetButton true while mouse pressed!
-            stone_TimeToSpawn = Time.time+ 1/ stone_SpawnRate;
-          
-            if (currStonesPresent < stone_maxPresent  ) {
+            stone_TimeToSpawn = Time.time + 1 / stone_SpawnRate;
+
+            if (currStonesPresent < stone_maxPresent) {
                 spawnNstones(1);
             }
         }
     }
 
 
-    
+
 
     public IEnumerator finishLevel() {
         yield return new WaitForSeconds(2f);
 
 
         //change scene
-      
+
+
+
 
         GameObject go = GameObject.FindGameObjectWithTag("SingleNetworkManager");
-      
+
         if (go.name == "NetMan") {//development
 
             go.GetComponent<NetworkManager>().ServerChangeScene("shop1");
@@ -141,24 +145,28 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
         }
     }
 
-    public IEnumerator playerDeadOrFinished(Player p) {
+    public IEnumerator playerFinished(Player p) {
         yield return new WaitForSeconds(2f);
-
 
 
         AllPlayerManager.givePlayerToObserve(p.netId);
 
-
-        //Destroy(p.gameObject);
     }
 
-   
+    public IEnumerator playerDead(Player p) {
+        yield return new WaitForSeconds(2f);
 
-   
+        p.isDead = true;
+
+        AllPlayerManager.givePlayerToObserve(p.netId);
+
+
+    }
 }
 
 
-public class MyMessage : MessageBase {
-    public NetworkInstanceId netId;
-   
-}
+    public class MyMessage : MessageBase {
+        public NetworkInstanceId netId;
+
+    }
+

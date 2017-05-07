@@ -128,18 +128,6 @@ public class ThrowStone : NetworkBehaviour {
                 timeToFire = Time.time + 1 / fireRate;
                 throwPending = true;
 
-                
-                
-                //server has correct number of stones for all players
-                //client has correct number of stones for himself
-
-
-                //if (!isServer) {
-                //    playerInst.updateStoneAmount(-1);
-                //}
-                
-                
-
             }
         }
         
@@ -164,7 +152,9 @@ public class ThrowStone : NetworkBehaviour {
    
     [Command]
     public void CmdThrowStone() {
-       
+
+        
+
         if (playerInst.numStonesPossessed > 0) {//sort of for anti-cheating on client
            // playerInst.updateStoneAmount(-1);
             playerInst.numStonesPossessed -= 1;//syncVar changed, and hook called on server and clients
@@ -194,18 +184,10 @@ public class ThrowStone : NetworkBehaviour {
 
 
 
-    [Command]
-    void CmdServerLogClientMessage(string message) {
-        Debug.Log(message);
-    }
-
     IEnumerator WaitAndDestroy(GameObject obj) {
         yield return new WaitForSeconds(5f);
         NetworkServer.Destroy(obj);//destroys both on Server and Client
     }
-
-
-
 
 
     void drawTraj(Vector2 pos, Vector2 velocity) {

@@ -16,23 +16,28 @@ public class ObjectDoor : MonoBehaviour {
         enteringPlayer = other.GetComponent<Player>();
         if (enteringPlayer.hasKey == true){
 
-            enteringPlayer.gameObject.SetActive(false);//??or on serveR?
+            //enteringPlayer.gameObject.SetActive(false);//??or on serveR?
+            enteringPlayer.keyUsed();
+            enteringPlayer.deactivatePlayer();
+           
 
 
-            
+
             if (enteringPlayer.isServer) {
               
-                AllPlayerManager.removePlayerById(enteringPlayer.getPlayerId());
+                AllPlayerManager.playerFinished(enteringPlayer.getPlayerId());
 
 
-                //if (AllPlayerManager.isLastInTeam(enteringPlayer.getTeamId())) {//last player finished --> change scene
-                //    StartCoroutine(GameObject.Find("GM").GetComponent<ServerGM>().finishLevel());
-                //}
-                //else {//still more players left in team
+                if (AllPlayerManager.isLastInTeam(enteringPlayer.getTeamId())) {//last player finished --> change scene
 
-                //    StartCoroutine(GameObject.Find("GM").GetComponent<ServerGM>().playerDeadOrFinished(enteringPlayer));  
-                //}
-                StartCoroutine(GameObject.Find("GM").GetComponent<ServerGM>().playerDeadOrFinished(enteringPlayer));
+                    AllPlayerManager.finishRemainingPlayers();
+                    StartCoroutine(GameObject.Find("GM").GetComponent<ServerGM>().finishLevel());
+                }
+                else {//still more players left in team
+
+                    StartCoroutine(GameObject.Find("GM").GetComponent<ServerGM>().playerFinished(enteringPlayer));
+                }
+                //StartCoroutine(GameObject.Find("GM").GetComponent<ServerGM>().playerDeadOrFinished(enteringPlayer));
             }
             
         }
