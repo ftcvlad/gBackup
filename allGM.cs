@@ -23,15 +23,54 @@ public class allGM : NetworkBehaviour {
 
     Transform resultsui;
     Transform table;
+    Text headerText;
 
     public GameObject rowPref;
+
+    public int timeToViewResults = 3;
+    [SyncVar(hook = "updateTimeLeftUntilNextLevel")] public int timeUntilNextLevel = 3;
+
+    
+
+
     void Start() {
+
+       
+
         NetworkManager.singleton.client.RegisterHandler(1000, switchPlayer);
 
         resultsui = transform.Find("LevelResultsUI");
         table = resultsui.Find("Results").Find("Table");
+
+        headerText = resultsui.Find("Results").Find("HeaderPanel").Find("Text").GetComponent<Text>();
+        headerText.text = "Level Finished! Next level in " + timeToViewResults;
+
+        SceneManager.sceneLoaded += OnLevelFinishedLoading;
     }
 
+    void OnLevelFinishedLoading(Scene scene, LoadSceneMode mode) {//do initial level preparation for each respective level
+     
+        
+        string sceneName = SceneManager.GetActiveScene().name;
+        if (sceneName == "shop1") {
+            Vector3 staticCameraPos = GameObject.Find("CameraPositionPoint").transform.position;
+            Camera.main.transform.position = new Vector3(staticCameraPos.x, staticCameraPos.y, staticCameraPos.z);
+        }
+       
+
+
+    }
+
+    void updateTimeLeftUntilNextLevel(int newValue) {
+
+        if (newValue == 0) {
+            resultsui.gameObject.SetActive(false);
+        }
+        else {
+            headerText.text = "Level Finished! Next level in " + newValue;
+        }
+        
+    }
 
     void Update() {
 

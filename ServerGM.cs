@@ -135,8 +135,30 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
 
     }
 
+    void reduceTimeUntilNextLevel() {
+        allGMInst.timeUntilNextLevel -= 1;
+        if (allGMInst.timeUntilNextLevel==0) {
+            allGMInst.timeUntilNextLevel = allGMInst.timeToViewResults;
+            CancelInvoke("reduceTimeUntilNextLevel");
+
+
+
+
+            ////change scene
+            GameObject go = GameObject.FindGameObjectWithTag("SingleNetworkManager");
+
+            if (go.name == "NetMan") {//development
+                go.GetComponent<NetworkManager>().ServerChangeScene("shop1");
+            }
+            else if (go.name == "LobbyManager") {//production :)
+                go.GetComponent<NetworkLobbyManager>().ServerChangeScene("shop1");
+            }
+        }
+    }
 
     public IEnumerator finishLevel(int winningTeamId) {
+
+        yield return new WaitForSeconds(1f);//make a little pause between player finishing and displaying results
 
         string sceneName= SceneManager.GetActiveScene().name;
         int totalTeamPrize = 0;
@@ -151,31 +173,17 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
         //calculate scores
 
         PlayerResult result = AllPlayerManager.calculateResults(winningTeamId, totalTeamPrize, perPlaceGoldStep, goldForUnfinished);
-
-
-        allGMInst.RpcDisplayLevelResults(result.allPlaces, result.allPlayerIds, result.allGoldWon);
-
-
-
         //deactivate remaining players
         AllPlayerManager.finishRemainingPlayers();
 
-        yield return new WaitForSeconds(2f);
+        allGMInst.RpcDisplayLevelResults(result.allPlaces, result.allPlayerIds, result.allGoldWon);
 
-        
+        InvokeRepeating("reduceTimeUntilNextLevel", 1, 1f);
+       
 
 
-
-
-        ////change scene
-        //GameObject go = GameObject.FindGameObjectWithTag("SingleNetworkManager");
-
-        //if (go.name == "NetMan") {//development
-        //    go.GetComponent<NetworkManager>().ServerChangeScene("shop1");
-        //}
-        //else if (go.name == "LobbyManager") {//production :)
-        //    go.GetComponent<NetworkLobbyManager>().ServerChangeScene("shop1");
-        //}
+ 
+       
     }
 
     public IEnumerator playerFinished(Player p) {

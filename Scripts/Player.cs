@@ -18,7 +18,7 @@ public class Player : NetworkBehaviour {
     int teamId;
     [SyncVar] int playerId;
     [SyncVar(hook = "updateStoneTileHook")] public int numStonesPossessed = 3;
-    [SyncVar(hook = "updateGoldTileHook")] public int gold = 500;
+    [SyncVar(hook = "updateGoldTileHook")] public int gold = 0;
     public bool isDead = false;
     public bool hasKey = false;
 
@@ -115,6 +115,7 @@ public class Player : NetworkBehaviour {
             uioverlay.gameObject.SetActive(true);
             GetComponent<MovementInput>().enabled = true;
             GetComponent<MovingPlayer>().enabled = true;
+           
         }
         else {
             GetComponent<MovingPlayer>().enabled = false;

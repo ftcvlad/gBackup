@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 
 
 public class MovingPlayer : NetworkBehaviour {
@@ -24,10 +25,12 @@ public class MovingPlayer : NetworkBehaviour {
 
     //camera
     private Transform mainCamera;
-    float cameraDistance = 10;
-    float cameraHeight = 0;
-    Vector3 cameraOffset;
+    public  float cameraDistance = 10;
+    public  float cameraHeight = 0;
+    public  Vector3 cameraOffset;
     public float heightDamping = 2.0f;
+
+
 
     Rigidbody2D rb;
 
@@ -39,6 +42,7 @@ public class MovingPlayer : NetworkBehaviour {
     ScaleSpecialSnowflake sss;
     Transform playerBody;
 
+    bool followPlayer = true;
 
     void Start() {
 
@@ -67,11 +71,7 @@ public class MovingPlayer : NetworkBehaviour {
 
         p = transform.GetComponent<Player>();
 
-      
-
-      
         cameraOffset = new Vector3(0, cameraHeight, -(Mathf.Abs(transform.position.z) + cameraDistance));
-        moveCamera();
 
         sss = transform.GetComponent<ScaleSpecialSnowflake>();
        
@@ -83,8 +83,16 @@ public class MovingPlayer : NetworkBehaviour {
             facingRight = playerBody.localScale.x > 0 ? true : false;
         }
        
-        cameraOffset = new Vector3(0, cameraHeight, -(Mathf.Abs(transform.position.z) + cameraDistance));
-     
+       
+
+        string sceneName = SceneManager.GetActiveScene().name;
+        if (sceneName == "shop1") {
+            followPlayer = false;
+        }
+        else {
+            followPlayer = true;
+        }
+
     }
 
     void OnDisable() {
@@ -141,7 +149,10 @@ public class MovingPlayer : NetworkBehaviour {
 
     void LateUpdate() {
         
-        moveCamera();//after physics calculations finished!
+        if (followPlayer) {
+            moveCamera();//after physics calculations finished!
+        }
+        
     }
 
     private void Flip() {
