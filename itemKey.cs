@@ -15,10 +15,10 @@ public class itemKey : NetworkBehaviour {
 
     void OnTriggerEnter2D(Collider2D other) {//when player finds key
 
-       
-        if (isPickable) {
-           
-            other.GetComponent<Player>().keyFound();
+        Player p = other.GetComponent<Player>();
+        if (isPickable && !p.hasKey) {
+
+            p.keyFound();
             transform.GetComponent<BoxCollider2D>().enabled = false;
             transform.Find("collider").GetComponent<SpriteRenderer>().enabled = false;
            

@@ -21,33 +21,45 @@ public class allGM : NetworkBehaviour {
 
     static bool canSwitchCameraView = false;
 
+    Transform levelui;
     Transform resultsui;
     Transform table;
     Text headerText;
+    Transform playercountui;
+    Text activeText;
+    Text finishedText;
+    Text toEndText;
 
     public GameObject rowPref;
 
     public int timeToViewResults = 3;
     [SyncVar(hook = "updateTimeLeftUntilNextLevel")] public int timeUntilNextLevel = 3;
 
-    
-
-
+   
     void Start() {
 
        
 
         NetworkManager.singleton.client.RegisterHandler(1000, switchPlayer);
 
-        resultsui = transform.Find("LevelResultsUI");
-        table = resultsui.Find("Results").Find("Table");
-
-        headerText = resultsui.Find("Results").Find("HeaderPanel").Find("Text").GetComponent<Text>();
+        //results
+        levelui = transform.Find("LevelUI");
+        resultsui = levelui.Find("Results");
+        table = resultsui.Find("Table");
+        headerText = resultsui.Find("HeaderPanel").Find("Text").GetComponent<Text>();
         headerText.text = "Level Finished! Next level in " + timeToViewResults;
 
+        //players frame
+        playercountui = levelui.Find("PlayerCountFrame");
+        activeText = playercountui.Find("Active").Find("CountTextBackground").Find("CountText").GetComponent<Text>();
+        finishedText = playercountui.Find("Finished").Find("CountTextBackground").Find("CountText").GetComponent<Text>();
+        toEndText = playercountui.Find("ToEnd").Find("CountTextBackground").Find("CountText").GetComponent<Text>();
+
+     
         SceneManager.sceneLoaded += OnLevelFinishedLoading;
     }
 
+    
     void OnLevelFinishedLoading(Scene scene, LoadSceneMode mode) {//do initial level preparation for each respective level
      
         
@@ -62,8 +74,9 @@ public class allGM : NetworkBehaviour {
     }
 
     void updateTimeLeftUntilNextLevel(int newValue) {
-
+      
         if (newValue == 0) {
+            playercountui.gameObject.SetActive(false);
             resultsui.gameObject.SetActive(false);
         }
         else {
@@ -77,8 +90,6 @@ public class allGM : NetworkBehaviour {
         if (canSwitchCameraView) {
 
             if (Input.GetKeyDown(KeyCode.N)) {
-                Debug.Log("n pressed");
-               
 
                 RequestNextPlayerMessage m = new RequestNextPlayerMessage();
                 m.currObservedPlayerId = currObservedPlayerId;
@@ -90,6 +101,21 @@ public class allGM : NetworkBehaviour {
 
         }
     }
+
+    [ClientRpc]
+    public void RpcUpdatePlayerCountFrame(int playersActive, int playersFinished, int playersToNextLevel) {
+
+       
+        activeText.text = playersActive + "";
+        finishedText.text = playersFinished + "";
+        toEndText.text = playersToNextLevel + "";
+
+        if (playercountui.gameObject.activeSelf == false) {
+            playercountui.gameObject.SetActive(true);
+        }
+    }
+
+
 
     [ClientRpc]
     public void RpcDisplayLevelResults(int[] allPlaces, int[] allPlayerNames, int[] allGoldWon) {

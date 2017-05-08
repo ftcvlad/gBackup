@@ -7,22 +7,105 @@ using UnityEngine.Networking;
 //ONLY USED ON SERVER, BUT SPAWNED EVERYWHERE 
 public class AllPlayerManager : NetworkBehaviour {
 
-    allGM ag;
-
-    void Start() {
-
-        ag = GameObject.Find("allGM").GetComponent<allGM>();
-        NetworkServer.RegisterHandler(1001, OnGiveNextPlayerToObserve);
-        
-    }
+    static allGM ag;
 
     static List<Player> allActivePlayers = new List<Player>();
     static List<Player> allFinishedPlayers = new List<Player>();
     static List<Player> allDeadPlayers = new List<Player>();
 
+    static int totalPlayers =0;
+    static int playersActive =0;
+    static int playersFinished =0;
+    static int playersToNextLevel =0;//number of players that should finish to go to next level
+
+    void Start() {
+        ag = GameObject.Find("allGM").GetComponent<allGM>();
+        NetworkServer.RegisterHandler(1001, OnGiveNextPlayerToObserve);
+    }
+
+   
+
+    public static void addPlayer(Player p) {
+        allActivePlayers.Add(p);
+
+        p.setTeamId(allActivePlayers.Count);//temporary!
+        p.setPlayerId(allActivePlayers.Count);
+
+        totalPlayers++;
+        playersActive++;
+        playersToNextLevel = getPlayersToNextLevel(false,playersActive);
+
+        ag.RpcUpdatePlayerCountFrame(playersActive, playersFinished, playersToNextLevel);
+     
+    }
+
+    static int getPlayersToNextLevel(bool isShop, int activePlayers) {
+        if (isShop) {
+            return activePlayers;
+        }
+        else {
+            switch (totalPlayers) {
+                case 1:
+                    return 1;
+                case 2:
+                   return 2;
+                case 3:
+                    return 2;
+                case 4:
+                    return 3;
+                case 5:
+                    return 3;
+                case 6:
+                    return 4;
+                default:
+                    return 4;
+            }
+        }
+    }
 
 
-    public static PlayerResult calculateResults(int winningTeamId, int totalTeamPrize, int perPlaceGoldStep, int goldForUnfinished) {
+    public static int determineWinningTeam() {
+
+
+        int maxCount = -1;
+        int count;
+        int size = allFinishedPlayers.Count;
+        List<int> maxTeamIds = new List<int>();
+
+        //find teamIds which are encountered more often
+        for (int i = 0; i < size; i++) {
+            count = 0;
+            int compareTeamId = allFinishedPlayers[i].getTeamId();
+            for (int j = i; j < size; j++) {
+                if (compareTeamId == allFinishedPlayers[j].getTeamId()) {
+                    count++;
+                }
+            }
+            if (count > maxCount) {
+                maxCount = count;
+                maxTeamIds = new List<int>();
+                maxTeamIds.Add(compareTeamId);
+            }
+            else if (count == maxCount) {
+                maxTeamIds.Add(compareTeamId);
+            }
+        }
+        //if serveral teams have same number of players, wins the one with the 1st player among them
+        if (maxTeamIds.Count == 1) {
+                return maxTeamIds[0];
+        }
+        else {
+            foreach (Player p in allFinishedPlayers) {
+                if ( maxTeamIds.IndexOf(p.getTeamId()) != -1) {
+                    return p.getTeamId();
+                }
+            }
+            return -1;//cannot happen
+        }
+       
+    }
+
+    public static PlayerResult calculateResults(int totalTeamPrize, int perPlaceGoldStep, int goldForUnfinished) {
 
 
         //Rpc can't send list of objects :(
@@ -34,23 +117,34 @@ public class AllPlayerManager : NetworkBehaviour {
         result.allGoldWon = new int[totalSize];
 
 
+        //determine winning team 
+        //It is the team, which has the most finished players. If equal #, winning is the team with max finished and 1st player among finished
 
-        int nOfWinningTeam=0;
+        int winningTeamId = determineWinningTeam();
+
+        int nOfWinningTeam =0;
         foreach(Player p in allFinishedPlayers) {
             if (p.getTeamId() == winningTeamId) {
                 nOfWinningTeam++;
             }
         }
+
         int goldPerPersonInTeam = (int)Mathf.Floor(totalTeamPrize/ nOfWinningTeam);
         int totalPlayersFinished = allFinishedPlayers.Count;
 
         int i = 0;
+        int goldWon = 0;
         foreach (Player p in allFinishedPlayers) {
 
             result.allPlayerIds[i] = p.getPlayerId();
             result.allPlaces[i] = i + 1;
-            result.allGoldWon[i] = goldPerPersonInTeam + (totalPlayersFinished-i)*perPlaceGoldStep;
-            p.gold += result.allGoldWon[i];//[SyncVar]
+            goldWon = (totalPlayersFinished - i) * perPlaceGoldStep;
+            if (p.getTeamId()== winningTeamId) {
+                goldWon += goldPerPersonInTeam;
+            }
+
+            result.allGoldWon[i] = goldWon;
+            p.gold += goldWon;//[SyncVar]
             i++;  
         }
 
@@ -90,21 +184,26 @@ public class AllPlayerManager : NetworkBehaviour {
 
         }
         allActivePlayers = allFinishedPlayers;
-        allFinishedPlayers = new List<Player>(); 
+        allFinishedPlayers = new List<Player>();
+
+        //reset player numbers
+        playersActive = allActivePlayers.Count;
+        playersFinished = 0;
+        playersToNextLevel = getPlayersToNextLevel(ServerGM.isSceneShop(),playersActive);
+        ag.RpcUpdatePlayerCountFrame(playersActive, playersFinished, playersToNextLevel);
+
     }
 
-    public static void addPlayer(Player p) {
-        allActivePlayers.Add(p);
-
-        p.setTeamId(allActivePlayers.Count);//temporary!
-        p.setPlayerId(allActivePlayers.Count);
-    }
+ 
 
     public static void playerFinished(int id) {
         for (int i = 0; i < allActivePlayers.Count; i++) {
             if (allActivePlayers[i].getPlayerId() == id) {
                 allFinishedPlayers.Add(allActivePlayers[i]);
                 allActivePlayers.RemoveAt(i);
+                playersActive--;
+                playersFinished++;
+                ag.RpcUpdatePlayerCountFrame(playersActive, playersFinished, playersToNextLevel);
                 return;
             }
         }
@@ -121,13 +220,9 @@ public class AllPlayerManager : NetworkBehaviour {
     }
 
 
-    public static bool isLastInTeam(int teamId) {
-        for (int i = 0; i < allActivePlayers.Count; i++) {
-            if (allActivePlayers[i].getTeamId() == teamId) {
-                return false;
-            }
-        }
-        return true;
+
+    public static bool isPlayersToEndReached() {
+        return (playersFinished == playersToNextLevel);
     }
 
 

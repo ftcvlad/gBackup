@@ -144,6 +144,11 @@ public class ThrowStone : NetworkBehaviour {
 
     }
 
+    public void showHideTrajectories(bool show) {
+        foreach (GameObject go in trajectoryPoints) {
+            go.GetComponent<SpriteRenderer>().enabled = show;
+        }
+    }
 
     void FixedUpdate() {
         if (throwPending) {

@@ -12,7 +12,7 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
     GameObject itemStonePref;
 
     [SerializeField]
-    GameObject keyPref_active;
+    GameObject keyPotPref;
 
     List<Transform> stone_spawnPositions = new List<Transform>();
     List<int> stone_freeIndexes = new List<int>();
@@ -24,7 +24,7 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
     float stone_SpawnRate = 1 / 3f;
     int currStonesPresent = 0;
     Transform stoneSpawnPointsFolder;
-    Transform keySpawnPointsFolder;
+    Transform keyPotSpawnPointsFolder;
     allGM allGMInst;
 
     void Start() {
@@ -40,8 +40,8 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
         stoneSpawnPointsFolder = GameObject.Find("StoneSpawnPoints").transform;
         spawnInitialStones();
 
-        keySpawnPointsFolder = GameObject.Find("KeySpawnPoints").transform;
-        spawnKey();
+        keyPotSpawnPointsFolder = GameObject.Find("KeyPotSpawnPoints").transform;
+        spawnKeyPot();
 
         allGMInst = GameObject.Find("allGM").GetComponent<allGM>();
 
@@ -51,19 +51,26 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
     }
 
 
-    public void spawnKey() {
-        List<Transform> key_spawnPoints = new List<Transform>();
-        foreach (Transform child in keySpawnPointsFolder) {
-            key_spawnPoints.Add(child);
+    public static bool isSceneShop() {
+        if (SceneManager.GetActiveScene().name == "shop1") {
+            return true;
         }
-        Transform loc = key_spawnPoints[rg.Next(0, key_spawnPoints.Count)];
+        else {
+            return false;
+        }
+    }
 
-        GameObject key = Instantiate(keyPref_active, loc.position, Quaternion.identity);
+    public void spawnKeyPot() {
+        List<Transform> keyPot_spawnPoints = new List<Transform>();
+        foreach (Transform child in keyPotSpawnPointsFolder) {
+            keyPot_spawnPoints.Add(child);
+        }
+        Transform loc = keyPot_spawnPoints[rg.Next(0, keyPot_spawnPoints.Count)];
 
-        key.GetComponent<itemKey>().isPickable = true;//on server
-        NetworkServer.Spawn(key);
+        GameObject keyPot = Instantiate(keyPotPref, loc.position, Quaternion.identity);
+        NetworkServer.Spawn(keyPot);
 
-        // transform.GetComponent<allGM>().RpcMakeKeyPickable();//on clients
+        
     }
 
     public void spawnInitialStones() {
@@ -137,7 +144,7 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
 
     void reduceTimeUntilNextLevel() {
         allGMInst.timeUntilNextLevel -= 1;
-        if (allGMInst.timeUntilNextLevel==0) {
+        if (allGMInst.timeUntilNextLevel==-1) {
             allGMInst.timeUntilNextLevel = allGMInst.timeToViewResults;
             CancelInvoke("reduceTimeUntilNextLevel");
 
@@ -156,7 +163,7 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
         }
     }
 
-    public IEnumerator finishLevel(int winningTeamId) {
+    public IEnumerator finishLevel() {
 
         yield return new WaitForSeconds(1f);//make a little pause between player finishing and displaying results
 
@@ -172,7 +179,7 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
 
         //calculate scores
 
-        PlayerResult result = AllPlayerManager.calculateResults(winningTeamId, totalTeamPrize, perPlaceGoldStep, goldForUnfinished);
+        PlayerResult result = AllPlayerManager.calculateResults(totalTeamPrize, perPlaceGoldStep, goldForUnfinished);
         //deactivate remaining players
         AllPlayerManager.finishRemainingPlayers();
 

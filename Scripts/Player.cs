@@ -37,10 +37,8 @@ public class Player : NetworkBehaviour {
 
     void Start() {
 
-
-        if (isServer) {
-            AllPlayerManager.addPlayer(this);
-        }
+       
+       
 
         currHealth = maxHealth;
 
@@ -62,12 +60,28 @@ public class Player : NetworkBehaviour {
     }
 
     public override void OnStartLocalPlayer() {
+       
+        //SEQUENCE:
+        //0 server. Objects initialised on server
+        //1 client. OnStartClient is called for allGM (all objects except player initialised)
+        //2 client. OnStartLocalPlayer on local player
+        //3 client. CmdAddLocalPlayer
+        //4 server. player added to AllPlayerManager.allActivaPlayers
+        //5 server. ag.RpcUpdatePlayerCountFrame can be called because allGM was init on every client
+
+
+        CmdAddPlayerOnServer(this.netId);
 
         //GetComponent().material.color = Color.blue;
         allGM.localPlayerNetId = transform.GetComponent<NetworkIdentity>().netId;
     }
 
+    [Command]
+    void CmdAddPlayerOnServer(NetworkInstanceId netId) {
 
+        
+        AllPlayerManager.addPlayer(NetworkServer.FindLocalObject(netId).GetComponent<Player>());
+    }
     
     //ACTIVATE/DEACTIVATE PLAYER
 
@@ -81,22 +95,36 @@ public class Player : NetworkBehaviour {
       
         if (this.isLocalPlayer) {
             this.transform.position = position;
+            activatePlayer();
         }
+        else {
+            StartCoroutine(lagActivate());
+        }
+       
+    }
+
+    //if isLocalPlayer==false its position is determined by other client. Give 1sec for NetworkTransform's interpolate to happen.
+    //So, not local players appear after +1 sec
+    IEnumerator lagActivate() {
+        yield return new WaitForSeconds(1f);
         activatePlayer();
     }
 
     //cannot do p.SetActive(false) because then 1)Rpc cals will not work 2) NetworkTransform will not follow after reactivated (why??)
     public void deactivatePlayer() {
-       
-        GetComponent<ThrowStone>().enabled = false;
+
         GetComponent<PolygonCollider2D>().enabled = false;
+        GetComponent<Rigidbody2D>().isKinematic = true;
+        GetComponent<Rigidbody2D>().velocity = Vector3.zero;
         statusBar.gameObject.SetActive(false);
         uioverlay.gameObject.SetActive(false);
         playerBody.gameObject.SetActive(false);
         GetComponent<MovingPlayer>().enabled = false;//if someone was observing this player, camera just stops
         if (isLocalPlayer) {
             GetComponent<MovementInput>().enabled = false;
+            GetComponent<ThrowStone>().showHideTrajectories(false);
         }
+        GetComponent<ThrowStone>().enabled = false;
     }
 
     public void activatePlayer() {
@@ -105,8 +133,9 @@ public class Player : NetworkBehaviour {
 
         if (sceneName != "shop1") {
             GetComponent<ThrowStone>().enabled = true;
+            GetComponent<ThrowStone>().showHideTrajectories(true);
         }
-        
+        GetComponent<Rigidbody2D>().isKinematic = false;
         GetComponent<PolygonCollider2D>().enabled = true;
         statusBar.gameObject.SetActive(true);
         playerBody.gameObject.SetActive(true);

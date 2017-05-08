@@ -19,7 +19,7 @@ public class ObjectDoor : MonoBehaviour {
             //enteringPlayer.gameObject.SetActive(false);//??or on serveR?
             enteringPlayer.keyUsed();
             enteringPlayer.deactivatePlayer();
-           
+            
 
 
 
@@ -28,12 +28,11 @@ public class ObjectDoor : MonoBehaviour {
                 AllPlayerManager.playerFinished(enteringPlayer.getPlayerId());
 
 
-                if (AllPlayerManager.isLastInTeam(enteringPlayer.getTeamId())) {//last player finished --> change scene
+                if (AllPlayerManager.isPlayersToEndReached()) {//end level
 
-                   
-                    StartCoroutine(GameObject.Find("GM").GetComponent<ServerGM>().finishLevel(enteringPlayer.getTeamId()));
+                    StartCoroutine(GameObject.Find("GM").GetComponent<ServerGM>().finishLevel());
                 }
-                else {//still more players left in team
+                else {
 
                     StartCoroutine(GameObject.Find("GM").GetComponent<ServerGM>().playerFinished(enteringPlayer));
                 }

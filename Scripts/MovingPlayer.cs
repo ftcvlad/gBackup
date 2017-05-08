@@ -71,7 +71,7 @@ public class MovingPlayer : NetworkBehaviour {
 
         p = transform.GetComponent<Player>();
 
-        cameraOffset = new Vector3(0, cameraHeight, -(Mathf.Abs(transform.position.z) + cameraDistance));
+        cameraOffset = new Vector3(0, cameraHeight, 0);
 
         sss = transform.GetComponent<ScaleSpecialSnowflake>();
        
@@ -178,7 +178,7 @@ public class MovingPlayer : NetworkBehaviour {
         if (mainCamera != null) {
             float newYsmooth = Mathf.Lerp(mainCamera.position.y, transform.position.y + cameraOffset.y, heightDamping * Time.deltaTime);
             newYsmooth = Mathf.Clamp(newYsmooth, 0, Mathf.Infinity);
-            mainCamera.position = new Vector3(transform.position.x + cameraOffset.x, newYsmooth, transform.position.z + cameraOffset.z);
+            mainCamera.position = new Vector3(transform.position.x + cameraOffset.x, newYsmooth, mainCamera.position.z);
 
         }
 
