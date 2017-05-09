@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class ObjectShopDoor : MonoBehaviour {
 
-    Player enteringPlayer;
+   
     Player localPlayer = null;
     bool playerClose;
 
@@ -35,7 +35,7 @@ public class ObjectShopDoor : MonoBehaviour {
 
 
     void Update() {
-        if (Input.GetKeyDown(KeyCode.B) && playerClose) {
+        if (Input.GetKeyDown(KeyCode.U) && playerClose) {
             localPlayer.GetComponent<MovementInput>().enabled = false;
             uioverlay.gameObject.SetActive(true);
         }

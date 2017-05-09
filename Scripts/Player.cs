@@ -160,20 +160,36 @@ public class Player : NetworkBehaviour {
     //EXIT SHOP
     [Command]
     public void CmdExitShop() {
-
         RpcDeactivatePlayer();
         AllPlayerManager.playerFinished(playerId);
 
-
         if (AllPlayerManager.isPlayersToEndReached()) {//???
-
             StartCoroutine(ServerGM.finishLevel());
         }
-      
     }
 
+    [Command]
+    public void CmdExitLevel() {
+        RpcKeyUsed();
+        RpcDeactivatePlayer();
+
+        AllPlayerManager.playerFinished(playerId);
+
+        if (AllPlayerManager.isPlayersToEndReached()) {//end level
+            StartCoroutine(ServerGM.finishLevel());
+        }
+        else {
+            StartCoroutine(ServerGM.givePlayerToObserve(this));
+        }
+
+    }
+
+   
+   
+            
 
 
+      
 
     //KEY
     public void dropKey() {
@@ -201,7 +217,8 @@ public class Player : NetworkBehaviour {
         itemDispMan.addItem("key");
     }
 
-    public void keyUsed() {
+    [ClientRpc]
+    public void RpcKeyUsed() {
         hasKey = false;
         itemDispMan.removeItem("key");
     }

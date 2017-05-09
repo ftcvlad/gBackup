@@ -186,7 +186,7 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
     }
 
 
- 
+   
 
     static void serverChangeScene() {
 
@@ -198,6 +198,11 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
         }
         else if (sceneName == "shop1") {
             nextSceneName = "level2";
+        }
+        else if (sceneName == "level2") {//finish the game
+            allGMInst.RpcFinishGame();
+
+            return;
         }
 
         

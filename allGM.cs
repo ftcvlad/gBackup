@@ -116,6 +116,15 @@ public class allGM : NetworkBehaviour {
     }
 
 
+    [ClientRpc]
+    public void RpcFinishGame() {
+        transform.Find("LevelUI").Find("GameOverFrame").gameObject.SetActive(true);
+    }
+
+    public void OnGameOverButtonPressed() {
+        //Debug.Log("GameOver");
+        Application.Quit();
+    }
 
     [ClientRpc]
     public void RpcDisplayLevelResults(int[] allPlaces, int[] allPlayerNames, int[] allGoldWon) {
