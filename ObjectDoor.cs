@@ -30,11 +30,11 @@ public class ObjectDoor : MonoBehaviour {
 
                 if (AllPlayerManager.isPlayersToEndReached()) {//end level
 
-                    StartCoroutine(GameObject.Find("GM").GetComponent<ServerGM>().finishLevel());
+                    StartCoroutine(ServerGM.finishLevel());
                 }
                 else {
 
-                    StartCoroutine(GameObject.Find("GM").GetComponent<ServerGM>().playerFinished(enteringPlayer));
+                    StartCoroutine(ServerGM.givePlayerToObserve(enteringPlayer));
                 }
                 //StartCoroutine(GameObject.Find("GM").GetComponent<ServerGM>().playerDeadOrFinished(enteringPlayer));
             }

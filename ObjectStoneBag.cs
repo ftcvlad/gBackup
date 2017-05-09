@@ -15,11 +15,7 @@ public class ObjectStoneBag : MonoBehaviour {
     Text goldText;
     Slider slider;
     void Start () {
-     
-
-        
-
-
+ 
         uioverlay = transform.Find("UIoverlay");
 
         Transform sliderArea = uioverlay.Find("Border").Find("InnerArea").Find("SliderArea");
@@ -34,16 +30,6 @@ public class ObjectStoneBag : MonoBehaviour {
 	void Update () {
         if (Input.GetKeyDown(KeyCode.B) && playerClose) {
          
-            if (localPlayer == null) {
-                GameObject[] allPlayers = GameObject.FindGameObjectsWithTag("Player");
-                Debug.Log(allPlayers.Length);
-                foreach (GameObject go in allPlayers) {
-                    if (go.GetComponent<Player>().isLocalPlayer) {
-                        localPlayer = go.GetComponent<Player>();
-                        break;
-                    }
-                }
-            }
 
 
             //set min/max amount of stones that player can afford
@@ -86,6 +72,9 @@ public class ObjectStoneBag : MonoBehaviour {
 
     void OnTriggerEnter2D(Collider2D other) {
         if (other.GetComponent<Player>().isLocalPlayer){
+            if (localPlayer == null) {
+                localPlayer = other.GetComponent<Player>();
+            }
             playerClose = true;
         }
       

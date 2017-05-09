@@ -18,9 +18,14 @@ public class AllPlayerManager : NetworkBehaviour {
     static int playersFinished =0;
     static int playersToNextLevel =0;//number of players that should finish to go to next level
 
+ 
+
     void Start() {
+        
         ag = GameObject.Find("allGM").GetComponent<allGM>();
         NetworkServer.RegisterHandler(1001, OnGiveNextPlayerToObserve);
+
+       
     }
 
    
@@ -36,7 +41,7 @@ public class AllPlayerManager : NetworkBehaviour {
         playersToNextLevel = getPlayersToNextLevel(false,playersActive);
 
         ag.RpcUpdatePlayerCountFrame(playersActive, playersFinished, playersToNextLevel);
-     
+       
     }
 
     static int getPlayersToNextLevel(bool isShop, int activePlayers) {
@@ -172,12 +177,16 @@ public class AllPlayerManager : NetworkBehaviour {
 
 
     public static IEnumerator activateAlivePlayers() {
+        
         //connection.isReady is set to false after ServerChangeScene, but then to true in OnConnection
         //so, it is true after 2 sec (rpc works again). + 2 sec is a nice pause before players are spawned
         yield return new WaitForSeconds(2f);
 
         GameObject[] allPlayerSpawnPoints = GameObject.FindGameObjectsWithTag("playerSpawnPoint");
         int ind = -1;
+
+        Debug.Log("count:"+ allFinishedPlayers.Count);
+
         foreach (Player p in allFinishedPlayers) {
             ind = (ind + 1) % allPlayerSpawnPoints.Length;
             p.RpcActivatePlayer(allPlayerSpawnPoints[ind].transform.position);

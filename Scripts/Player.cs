@@ -78,10 +78,13 @@ public class Player : NetworkBehaviour {
 
     [Command]
     void CmdAddPlayerOnServer(NetworkInstanceId netId) {
-
-        
         AllPlayerManager.addPlayer(NetworkServer.FindLocalObject(netId).GetComponent<Player>());
     }
+
+
+
+
+
     
     //ACTIVATE/DEACTIVATE PLAYER
 
@@ -92,7 +95,8 @@ public class Player : NetworkBehaviour {
 
     [ClientRpc]
     public void RpcActivatePlayer(Vector3 position) {
-      
+
+        Debug.Log("RpcActivatePlayer");
         if (this.isLocalPlayer) {
             this.transform.position = position;
             activatePlayer();
@@ -131,7 +135,7 @@ public class Player : NetworkBehaviour {
 
         string sceneName = SceneManager.GetActiveScene().name;
 
-        if (sceneName != "shop1") {
+        if (sceneName != "shop1" && isLocalPlayer) {
             GetComponent<ThrowStone>().enabled = true;
             GetComponent<ThrowStone>().showHideTrajectories(true);
         }
@@ -150,6 +154,25 @@ public class Player : NetworkBehaviour {
             GetComponent<MovingPlayer>().enabled = false;
         }
     }
+
+
+
+    //EXIT SHOP
+    [Command]
+    public void CmdExitShop() {
+
+        RpcDeactivatePlayer();
+        AllPlayerManager.playerFinished(playerId);
+
+
+        if (AllPlayerManager.isPlayersToEndReached()) {//???
+
+            StartCoroutine(ServerGM.finishLevel());
+        }
+      
+    }
+
+
 
 
     //KEY

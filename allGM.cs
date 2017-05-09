@@ -124,10 +124,7 @@ public class allGM : NetworkBehaviour {
         //add row for each player result
 
         for (int i = 0; i < allPlaces.Length; i++) {
-            Debug.Log("place: " + allPlaces[i] + " playerID:" + allPlayerNames[i] + " gold:" + allGoldWon[i]);
-
-
-
+            
             GameObject g = GameObject.Instantiate(rowPref, table);
             g.transform.Find("Place").Find("Text").GetComponent<Text>().text = ""+allPlaces[i];
             g.transform.Find("PlayerName").Find("Text").GetComponent<Text>().text = "" + allPlayerNames[i];
