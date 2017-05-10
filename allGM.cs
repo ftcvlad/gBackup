@@ -129,9 +129,16 @@ public class allGM : NetworkBehaviour {
     [ClientRpc]
     public void RpcDisplayLevelResults(int[] allPlaces, int[] allPlayerNames, int[] allGoldWon) {
 
+        
+        //delete previous results if any
+        foreach (Transform child in table) {
+            if (child.gameObject.name != "HeaderRow") {
+                Destroy(child.gameObject);
+            }
+        }
+
         //activate result frame
         //add row for each player result
-
         for (int i = 0; i < allPlaces.Length; i++) {
             
             GameObject g = GameObject.Instantiate(rowPref, table);

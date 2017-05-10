@@ -84,7 +84,9 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
 
 
         if (!isFirstLevelEverLoaded) {
-            StartCoroutine(AllPlayerManager.activateAlivePlayers());
+            StartCoroutine(AllPlayerManager.activatePlayers());
+           
+            
         }
        
     }
@@ -261,15 +263,26 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
 
     }
 
-    public IEnumerator playerDead(Player p) {
-        yield return new WaitForSeconds(2f);
+    public static void handlePlayerDied(Player p) {
+        AllPlayerManager.playerDied(p.getPlayerId());//update arrays; update player counts;
 
-        p.isDead = true;
+        allGMInst.RpcUpdatePlayerCountFrame(AllPlayerManager.playersActive, AllPlayerManager.playersFinished, AllPlayerManager.playersToNextLevel);
+        if (AllPlayerManager.playersFinished + AllPlayerManager.playersActive > 0) {
 
-        AllPlayerManager.givePlayerToObserve(p.netId);
+            if (AllPlayerManager.isPlayersToEndReached()) {//end level
+                instanceSelf.StartCoroutine(ServerGM.finishLevel());
+            }
+            else {
+                instanceSelf.StartCoroutine(ServerGM.givePlayerToObserve(p));
+            }
 
+        }
+        else {//game over
+            allGMInst.RpcFinishGame();
+        }
 
-    }
+       
+    } 
 }
 
 

@@ -14,7 +14,7 @@ public class Player : NetworkBehaviour {
 
    
     public int maxHealth = 100;
-    int currHealth;
+    public int currHealth;
     int teamId;
     [SyncVar] int playerId;
     [SyncVar(hook = "updateStoneTileHook")] public int numStonesPossessed = 3;
@@ -27,24 +27,27 @@ public class Player : NetworkBehaviour {
     Transform statusBar;
     Transform uioverlay;
     Transform playerBody;
+    Transform graphics;
 
     [SerializeField]
     GameObject keyPref_inactive;
 
     System.Random rg = new System.Random(((int)(DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) % 1000));
 
-    
 
+    Color deadColor;
     void Start() {
 
-       
-       
+
+        deadColor = new Color();
+        ColorUtility.TryParseHtmlString("#3A2424FF", out deadColor);
 
         currHealth = maxHealth;
 
         statusBar = transform.FindChild("StatusBar");
         uioverlay = transform.Find("UIoverlay");
         playerBody = transform.Find("PlayerBody");
+        graphics = playerBody.Find("Graphics");
         statusBarManager = statusBar.GetComponent<StatusBarManager>();
         itemDispMan = uioverlay.Find("PersonalItemList").GetComponent<ItemDisplayManager>();
         
@@ -52,10 +55,12 @@ public class Player : NetworkBehaviour {
             uioverlay.Find("ObservingMessage").Find("Text").GetComponent<Text>().text = "Observing player " + playerId + ". Press n to switch to next player.";
         }
         else {
+            graphics.GetComponent<SpriteRenderer>().sortingOrder = 5;
             Destroy(uioverlay.Find("ObservingMessage").gameObject);
         }
 
-
+    
+       
         UnityEngine.Object.DontDestroyOnLoad(this.gameObject);
     }
 
@@ -74,6 +79,8 @@ public class Player : NetworkBehaviour {
 
         //GetComponent().material.color = Color.blue;
         allGM.localPlayerNetId = transform.GetComponent<NetworkIdentity>().netId;
+
+       
     }
 
     [Command]
@@ -85,12 +92,17 @@ public class Player : NetworkBehaviour {
 
 
 
+
+
+
+
+
     
     //ACTIVATE/DEACTIVATE PLAYER
 
     [ClientRpc]
-    public void RpcDeactivatePlayer() {
-        deactivatePlayer();
+    public void RpcDeactivateFinishedPlayer() {
+        deactivateFinishedPlayer();
     }
 
     [ClientRpc]
@@ -115,20 +127,56 @@ public class Player : NetworkBehaviour {
     }
 
     //cannot do p.SetActive(false) because then 1)Rpc cals will not work 2) NetworkTransform will not follow after reactivated (why??)
-    public void deactivatePlayer() {
-
-        GetComponent<PolygonCollider2D>().enabled = false;
+    public void deactivateAnyPlayer() {
         GetComponent<Rigidbody2D>().isKinematic = true;
         GetComponent<Rigidbody2D>().velocity = Vector3.zero;
         statusBar.gameObject.SetActive(false);
         uioverlay.gameObject.SetActive(false);
-        playerBody.gameObject.SetActive(false);
+       
         GetComponent<MovingPlayer>().enabled = false;//if someone was observing this player, camera just stops
         if (isLocalPlayer) {
             GetComponent<MovementInput>().enabled = false;
             GetComponent<ThrowStone>().showHideTrajectories(false);
         }
         GetComponent<ThrowStone>().enabled = false;
+
+
+    }
+
+
+    public void deactivateFinishedPlayer() {
+        deactivateAnyPlayer();
+
+        playerBody.gameObject.SetActive(false);
+        GetComponent<PolygonCollider2D>().enabled = false;
+    }
+
+
+    void deactivateDeadPlayer() {
+        deactivateAnyPlayer();
+
+        graphics.GetComponent<SpriteRenderer>().sortingOrder = 0;
+        graphics.GetComponent<SpriteRenderer>().color = deadColor;
+        StartCoroutine(lagDestroyCollider());
+    }
+
+    IEnumerator lagDestroyCollider() {
+        yield return new WaitForSeconds(1f);
+        GetComponent<PolygonCollider2D>().enabled = false;
+    }
+
+    [ClientRpc]
+    public void RpcHideDeadPlayer() {
+        SpriteRenderer sr = graphics.GetComponent<SpriteRenderer>();
+        sr.color = Color.white;//destroy after 1 sec to allow bullet on clients hit it (and make bullet disappear timely)
+       
+        if (isLocalPlayer) {
+            sr.sortingOrder = 5;
+        }
+        else {
+            sr.sortingOrder = 1;
+        }
+        playerBody.gameObject.SetActive(false);
     }
 
     public void activatePlayer() {
@@ -143,6 +191,7 @@ public class Player : NetworkBehaviour {
         GetComponent<PolygonCollider2D>().enabled = true;
         statusBar.gameObject.SetActive(true);
         playerBody.gameObject.SetActive(true);
+       
 
         if (isLocalPlayer) {
             uioverlay.gameObject.SetActive(true);
@@ -157,10 +206,18 @@ public class Player : NetworkBehaviour {
 
 
 
+
+
+
+
+
+
+
+
     //EXIT SHOP
     [Command]
     public void CmdExitShop() {
-        RpcDeactivatePlayer();
+        RpcDeactivateFinishedPlayer();
         AllPlayerManager.playerFinished(playerId);
 
         if (AllPlayerManager.isPlayersToEndReached()) {//???
@@ -171,7 +228,7 @@ public class Player : NetworkBehaviour {
     [Command]
     public void CmdExitLevel() {
         RpcKeyUsed();
-        RpcDeactivatePlayer();
+        RpcDeactivateFinishedPlayer();
 
         AllPlayerManager.playerFinished(playerId);
 
@@ -194,7 +251,7 @@ public class Player : NetworkBehaviour {
     //KEY
     public void dropKey() {
       
-        if (isServer && hasKey) {
+        if (isServer) {
             GameObject key = Instantiate(keyPref_inactive, transform.position, Quaternion.identity);
             key.GetComponent<Rigidbody2D>().velocity = new Vector2((float)rg.NextDouble() * 2 - 1, 1) * 10;
             NetworkServer.Spawn(key);
@@ -204,9 +261,9 @@ public class Player : NetworkBehaviour {
     }
 
     [ClientRpc]
-    void RpcDropKey() {//+
+    void RpcDropKey() {
         
-        //TODO: this should happen with every player on the same team
+       
        hasKey = false;
        itemDispMan.removeItem("key");
         
@@ -223,16 +280,7 @@ public class Player : NetworkBehaviour {
         itemDispMan.removeItem("key");
     }
 
-    //[ClientRpc]
-    //public void RpcKeyFound() {
-
-    //    hasKey = true;
-    //    if (isLocalPlayer) {
-    //        itemDispMan.addItem("key");
-    //    }
-
-    //    //TODO: and the same for every team member!
-    //}
+  
 
     //STONES
 
@@ -262,27 +310,52 @@ public class Player : NetworkBehaviour {
     
     //DAMAGE
 
-
-    [ClientRpc]
-    public void RpcTakeDamage(int damage) {
-        takeDamage(damage);
-    }
-    void takeDamage(int damage) {
-      
-       
+    public void reduceHealth(int damage) {
         currHealth = Mathf.Max(0, currHealth - damage);
         statusBarManager.updateHealthBar(currHealth, maxHealth);
-
-        if (!isServer) {
-            return;
-        }
-
-        if (currHealth <= 0) {
-            //die 
-            //RpcDied(); // remove prefab, enable camera follow some other prefab of choice
-        }
     }
 
+  
+   
+    public void loseItemsAndGold() {
+        gold = 0;
+        numStonesPossessed = 0;
+        //TODO: all other items
+    }
+    
+
+
+    [ClientRpc]
+    public void RpcTakeDamage(int damageAmount) {
+        reduceHealth(damageAmount);
+        if (currHealth <= 0) {
+            deactivateDeadPlayer();
+            loseItemsAndGold();
+
+            if (isServer) {
+                ServerGM.handlePlayerDied(this);
+            }
+        }
+
+    }
+
+    
+
+
+    //public void damagePlayer(int damageAmount) {//LOCAL VERSION. STONE TRAP NOT SYNCHRONISED :(
+    //    if (hasKey) {
+    //        dropKey();
+    //    }
+    //    reduceHealth(damageAmount);//health+status bar
+    //    if (currHealth <= 0) {
+    //        deactivatePlayer();//??? die animation
+    //        loseItemsAndGold();
+
+    //        if (isServer) {
+    //            ServerGM.handlePlayerDied(this);
+    //        }
+    //    }
+    //}
 
     //SETTERS/GETTERS
 

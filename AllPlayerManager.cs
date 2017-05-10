@@ -14,9 +14,9 @@ public class AllPlayerManager : NetworkBehaviour {
     static List<Player> allDeadPlayers = new List<Player>();
 
     static int totalPlayers =0;
-    static int playersActive =0;
-    static int playersFinished =0;
-    static int playersToNextLevel =0;//number of players that should finish to go to next level
+    public static int playersActive =0;
+    public static int playersFinished =0;
+    public static int playersToNextLevel =0;//number of players that should finish to go to next level
 
  
 
@@ -49,7 +49,7 @@ public class AllPlayerManager : NetworkBehaviour {
             return activePlayers;
         }
         else {
-            switch (totalPlayers) {
+            switch (activePlayers) {
                 case 1:
                     return 1;
                 case 2:
@@ -168,15 +168,19 @@ public class AllPlayerManager : NetworkBehaviour {
     public static void finishRemainingPlayers() {
         foreach (Player p in allActivePlayers) {
             allFinishedPlayers.Add(p);
-            p.RpcDeactivatePlayer();
+            p.RpcDeactivateFinishedPlayer();
+        }
+
+        foreach (Player p in allDeadPlayers) {
+            p.RpcHideDeadPlayer();
         }
         allActivePlayers = null;
     }
 
+
    
 
-
-    public static IEnumerator activateAlivePlayers() {
+    public static IEnumerator activatePlayers() {
         
         //connection.isReady is set to false after ServerChangeScene, but then to true in OnConnection
         //so, it is true after 2 sec (rpc works again). + 2 sec is a nice pause before players are spawned
@@ -185,15 +189,17 @@ public class AllPlayerManager : NetworkBehaviour {
         GameObject[] allPlayerSpawnPoints = GameObject.FindGameObjectsWithTag("playerSpawnPoint");
         int ind = -1;
 
-        Debug.Log("count:"+ allFinishedPlayers.Count);
+        allFinishedPlayers.AddRange(allDeadPlayers);//here all players out there
+        allActivePlayers = allFinishedPlayers;
+        allFinishedPlayers = new List<Player>();
+        allDeadPlayers = new List<Player>();
 
-        foreach (Player p in allFinishedPlayers) {
+        foreach (Player p in allActivePlayers) {
             ind = (ind + 1) % allPlayerSpawnPoints.Length;
             p.RpcActivatePlayer(allPlayerSpawnPoints[ind].transform.position);
 
         }
-        allActivePlayers = allFinishedPlayers;
-        allFinishedPlayers = new List<Player>();
+        
 
         //reset player numbers
         playersActive = allActivePlayers.Count;
@@ -223,6 +229,13 @@ public class AllPlayerManager : NetworkBehaviour {
             if (allActivePlayers[i].getPlayerId() == id) {
                 allDeadPlayers.Add(allActivePlayers[i]);
                 allActivePlayers.RemoveAt(i);
+                playersActive--;
+
+            
+                if (playersFinished + playersActive > 0) {
+                    playersToNextLevel = Mathf.Min(playersActive + playersFinished, playersToNextLevel);
+                }
+                
                 return;
             }
         }
