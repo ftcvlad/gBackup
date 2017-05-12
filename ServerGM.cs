@@ -16,7 +16,7 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
 
     List<Transform> stone_spawnPositions;
     List<int> stone_freeIndexes;
-    int stone_maxPresent = 5;
+    int stone_maxPresent;
 
 
     System.Random rg;
@@ -121,11 +121,16 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
             stone_freeIndexes.Add(stone_freeIndexes.Count);
         }
 
+        stone_maxPresent = stone_spawnPositions.Count;
+
+        currStonesPresent = 0;
         spawnNstones(stone_maxPresent);
 
     }
 
     public void spawnNstones(int n) {
+
+       
 
         if (n > stone_freeIndexes.Count) {
             n = stone_freeIndexes.Count;
@@ -165,7 +170,6 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
         if (!isCurrentSceneShop) {
             if (Time.time > stone_TimeToSpawn) {//GetButton true while mouse pressed!
                 stone_TimeToSpawn = Time.time + 1 / stone_SpawnRate;
-
                 if (currStonesPresent < stone_maxPresent) {
                     spawnNstones(1);
                 }

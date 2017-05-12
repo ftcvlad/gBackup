@@ -28,7 +28,7 @@ public class ObjectStoneBag : MonoBehaviour {
 	
 	
 	void Update () {
-        if (Input.GetKeyDown(KeyCode.B) && playerClose) {
+        if (Input.GetKeyDown(KeyCode.Space) && playerClose) {
          
 
 

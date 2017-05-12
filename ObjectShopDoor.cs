@@ -35,7 +35,7 @@ public class ObjectShopDoor : MonoBehaviour {
 
 
     void Update() {
-        if (Input.GetKeyDown(KeyCode.U) && playerClose) {
+        if (Input.GetKeyDown(KeyCode.Space) && playerClose) {
             localPlayer.GetComponent<MovementInput>().enabled = false;
             uioverlay.gameObject.SetActive(true);
         }

@@ -10,6 +10,7 @@ public class ItemDisplayManager : MonoBehaviour {
     Transform stonesTile;
     Text goldText;
     Transform noStonesForeground;
+    Transform healthPotTile;
 
     List<Tuple<string, Transform>>   allItems = new List<Tuple<string, Transform>>();
 
@@ -18,6 +19,10 @@ public class ItemDisplayManager : MonoBehaviour {
 
     [SerializeField]
     GameObject keyItemTilePref;
+
+    [SerializeField]
+    GameObject healthPotItemTilePref;//ssdsdf
+
 
     //and other tileItem prefabs
 
@@ -66,19 +71,38 @@ public class ItemDisplayManager : MonoBehaviour {
         }
     }
 
+
+ 
+    public void updateHealthPotsAmount(int oldVal, int newVal) {
+
+
+        if (oldVal == 0) {
+            addItem("healthPot");
+        }
+        else if (newVal == 0) {
+            removeItem("healthPot");
+        }
+        else {
+            healthPotTile.Find("amountText").GetComponent<Text>().text = newVal + "";
+
+        }
+    }
+
     public void addItem(string itemName) {
 
-        
+        Vector2 position = new Vector2(allItems[0].second.localPosition.x + allItems.Count * (offsetBetweenTiles + tileSideSize), 0);
+
         if (itemName == "key") {
-
-           
             
-            Vector2 position = new Vector2(allItems[0].second.localPosition.x + allItems.Count * (offsetBetweenTiles+tileSideSize),0);
-
             GameObject newItemStone = Instantiate(keyItemTilePref, position, Quaternion.identity);
-
             newItemStone.transform.SetParent(transform, false);
             allItems.Add(new Tuple<string, Transform>("key", newItemStone.transform));
+        }
+        else if (itemName == "healthPot") {
+            
+            healthPotTile =  Instantiate(healthPotItemTilePref, position, Quaternion.identity).transform;
+            healthPotTile.SetParent(transform, false);
+            allItems.Add(new Tuple<string, Transform>("healthPot", healthPotTile));
         }
     }
 
@@ -91,7 +115,7 @@ public class ItemDisplayManager : MonoBehaviour {
 
                 //move further items left
                 for (int j = i + 1; j < allItems.Count; j++) {
-                    allItems[i].second.position = new Vector2(allItems[i].second.position.x-offsetBetweenTiles-tileSideSize, allItems[i].second.position.y);
+                    allItems[i].second.position = new Vector2(allItems[i].second.localPosition.x-offsetBetweenTiles-tileSideSize, allItems[i].second.position.y);
                 }
 
                 allItems.RemoveAt(i);

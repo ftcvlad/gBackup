@@ -18,6 +18,8 @@ public class Player : NetworkBehaviour {
     int teamId;
     [SyncVar] int playerId;
     [SyncVar(hook = "updateStoneTileHook")] public int numStonesPossessed = 3;
+    [SyncVar(hook = "updateHealthPotsTileHook")] public int numHealthPotsPossessed = 0;
+    
     [SyncVar(hook = "updateGoldTileHook")] public int gold = 0;
     public bool isDead = false;
     public bool hasKey = false;
@@ -28,6 +30,7 @@ public class Player : NetworkBehaviour {
     Transform uioverlay;
     Transform playerBody;
     Transform graphics;
+    Transform halo;
 
     [SerializeField]
     GameObject keyPref_inactive;
@@ -47,6 +50,7 @@ public class Player : NetworkBehaviour {
         statusBar = transform.FindChild("StatusBar");
         uioverlay = transform.Find("UIoverlay");
         playerBody = transform.Find("PlayerBody");
+        halo = playerBody.Find("HaloPoint");
         graphics = playerBody.Find("Graphics");
         statusBarManager = statusBar.GetComponent<StatusBarManager>();
         itemDispMan = uioverlay.Find("PersonalItemList").GetComponent<ItemDisplayManager>();
@@ -107,8 +111,9 @@ public class Player : NetworkBehaviour {
 
     [ClientRpc]
     public void RpcActivatePlayer(Vector3 position) {
+        setHealth(maxHealth);
 
-        Debug.Log("RpcActivatePlayer");
+
         if (this.isLocalPlayer) {
             this.transform.position = position;
             activatePlayer();
@@ -262,22 +267,22 @@ public class Player : NetworkBehaviour {
 
     [ClientRpc]
     void RpcDropKey() {
-        
-       
        hasKey = false;
        itemDispMan.removeItem("key");
-        
+       halo.gameObject.SetActive(false);
     }
 
     public void keyFound() {
         hasKey = true;
         itemDispMan.addItem("key");
+        halo.gameObject.SetActive(true);
     }
 
     [ClientRpc]
     public void RpcKeyUsed() {
         hasKey = false;
         itemDispMan.removeItem("key");
+        halo.gameObject.SetActive(false);
     }
 
   
@@ -299,15 +304,26 @@ public class Player : NetworkBehaviour {
     public void updateGoldTileHook(int newGoldValue) {
         itemDispMan.updateGold(newGoldValue);
     }
-   
-
-    
-
-    
 
 
 
-    
+    //HEALTH POTS
+    public void updateHealthPotsTileHook(int newHealthPotsNum) {
+        itemDispMan.updateHealthPotsAmount(numHealthPotsPossessed, newHealthPotsNum);
+
+        //1 was used
+        if (numHealthPotsPossessed > newHealthPotsNum) {
+            setHealth(Mathf.Min(maxHealth, currHealth + 50));//will make some class for health pot :)
+        }
+    }
+
+    [Command]
+    public void CmdUseHealthPot() {
+        numHealthPotsPossessed--;
+    }
+
+ 
+
     //DAMAGE
 
     public void reduceHealth(int damage) {
@@ -315,11 +331,16 @@ public class Player : NetworkBehaviour {
         statusBarManager.updateHealthBar(currHealth, maxHealth);
     }
 
-  
-   
+    public void setHealth(int health) {
+        currHealth = health;
+        statusBarManager.updateHealthBar(currHealth, maxHealth);
+    }
+
+
     public void loseItemsAndGold() {
         gold = 0;
         numStonesPossessed = 0;
+        numHealthPotsPossessed = 0;
         //TODO: all other items
     }
     

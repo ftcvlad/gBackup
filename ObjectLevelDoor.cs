@@ -27,7 +27,7 @@ public class ObjectLevelDoor : MonoBehaviour {
 
 
     void Update() {
-        if (Input.GetKeyDown(KeyCode.U) && playerClose) {
+        if (Input.GetKeyDown(KeyCode.Space) && playerClose) {
             if (localPlayer.hasKey) {
                 localPlayer.CmdExitLevel();
             }

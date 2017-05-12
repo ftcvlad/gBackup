@@ -44,6 +44,9 @@ public class MovingPlayer : NetworkBehaviour {
 
     bool followPlayer = true;
 
+   
+
+
     void Start() {
 
         
@@ -74,7 +77,8 @@ public class MovingPlayer : NetworkBehaviour {
         cameraOffset = new Vector3(0, cameraHeight, 0);
 
         sss = transform.GetComponent<ScaleSpecialSnowflake>();
-       
+
+        
     }
 
     void OnEnable() {
@@ -188,5 +192,10 @@ public class MovingPlayer : NetworkBehaviour {
     }
 
 
+    
+
+
+
+    
 
 }
