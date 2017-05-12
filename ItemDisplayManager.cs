@@ -75,9 +75,11 @@ public class ItemDisplayManager : MonoBehaviour {
  
     public void updateHealthPotsAmount(int oldVal, int newVal) {
 
-
+        
         if (oldVal == 0) {
+            
             addItem("healthPot");
+            healthPotTile.Find("amountText").GetComponent<Text>().text = newVal + "";
         }
         else if (newVal == 0) {
             removeItem("healthPot");
@@ -115,7 +117,7 @@ public class ItemDisplayManager : MonoBehaviour {
 
                 //move further items left
                 for (int j = i + 1; j < allItems.Count; j++) {
-                    allItems[i].second.position = new Vector2(allItems[i].second.localPosition.x-offsetBetweenTiles-tileSideSize, allItems[i].second.position.y);
+                    allItems[j].second.localPosition = new Vector2(allItems[j].second.localPosition.x-offsetBetweenTiles-tileSideSize, allItems[j].second.localPosition.y);
                 }
 
                 allItems.RemoveAt(i);

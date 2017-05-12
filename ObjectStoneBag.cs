@@ -8,7 +8,7 @@ public class ObjectStoneBag : MonoBehaviour {
     bool playerClose = false;
     Player localPlayer = null;
     Transform uioverlay;
-    int stonePrice = 49;
+    int stonePrice = 20;
     Text minText;
     Text maxText;
     Text currText;
@@ -53,9 +53,11 @@ public class ObjectStoneBag : MonoBehaviour {
     public void OnOkButtonPressed() {
 
 
-        //buy stones
+        int amount = (int)slider.value;
+        if (amount > 0) {
+            localPlayer.CmdBuyStones(amount, amount * stonePrice);
+        }
 
-        localPlayer.CmdBuyStones((int)slider.value, (int)slider.value*stonePrice);
 
         localPlayer.GetComponent<MovementInput>().enabled = true;
         uioverlay.gameObject.SetActive(false);

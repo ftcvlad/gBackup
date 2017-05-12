@@ -57,7 +57,8 @@ public class StoneController : NetworkBehaviour {
 
         }
             else if (collLayerName == "Ground") {
-                //particles
+            //particles
+            
                 Transform stoneBrPart = (Transform)Instantiate(stoneBreakParticlesPrefab, hit.point, Quaternion.FromToRotation(Vector3.right, hit.normal));
                 Destroy(stoneBrPart.gameObject, 1f);
             }

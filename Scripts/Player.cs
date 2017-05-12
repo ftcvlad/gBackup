@@ -291,6 +291,7 @@ public class Player : NetworkBehaviour {
 
     public void updateStoneTileHook(int newStoneNum) {
         itemDispMan.updateStoneAmount(newStoneNum);
+        numStonesPossessed = newStoneNum;
     }
 
     [Command]
@@ -309,12 +310,15 @@ public class Player : NetworkBehaviour {
 
     //HEALTH POTS
     public void updateHealthPotsTileHook(int newHealthPotsNum) {
+        
         itemDispMan.updateHealthPotsAmount(numHealthPotsPossessed, newHealthPotsNum);
-
+        
         //1 was used
         if (numHealthPotsPossessed > newHealthPotsNum) {
             setHealth(Mathf.Min(maxHealth, currHealth + 50));//will make some class for health pot :)
         }
+
+        numHealthPotsPossessed = newHealthPotsNum;
     }
 
     [Command]
@@ -322,7 +326,11 @@ public class Player : NetworkBehaviour {
         numHealthPotsPossessed--;
     }
 
- 
+    [Command]
+    public void CmdBuyHealthPots(int amount, int cost) {
+        gold -= cost;
+        numHealthPotsPossessed += amount;
+    }
 
     //DAMAGE
 
