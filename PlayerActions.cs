@@ -9,13 +9,26 @@ public class PlayerActions : NetworkBehaviour {
     DistanceJoint2D dj;
     LineRenderer lr;
     Player player;
-    GameObject currentCloseDraggableBox = null;
 
+    ContactFilter2D cf;
+    Collider2D[] closeDraggableBox = new Collider2D[1];
+
+    ContactFilter2D cf2;
+    Collider2D[] closeControlBox = new Collider2D[1];
 
     void Start () {
         dj = GetComponent<DistanceJoint2D>();
         lr = transform.Find("Rope").GetComponent<LineRenderer>();
         player = transform.GetComponent<Player>();
+
+
+        cf = new ContactFilter2D();
+        cf.SetLayerMask((1 << LayerMask.NameToLayer("DraggableBoxLayer")));
+
+        cf2 = new ContactFilter2D();
+        cf2.SetLayerMask((1 << LayerMask.NameToLayer("ControlBoxLayer")));
+
+
     }
 
 
@@ -31,6 +44,8 @@ public class PlayerActions : NetworkBehaviour {
         dj.connectedBody = ClientScene.FindLocalObject(netId).GetComponent<Rigidbody2D>();
         isDraggingBox = true;
         lr.enabled = true;
+        lr.SetPosition(0, transform.position);
+        lr.SetPosition(1, dj.connectedBody.transform.position);
     }
 
     //STOP draggin
@@ -41,12 +56,15 @@ public class PlayerActions : NetworkBehaviour {
 
     [ClientRpc]
     void RpcStopDragBox() {
+        stopDraggingBox();
+    }
+
+    public void stopDraggingBox() {
         dj.enabled = false;
         dj.connectedBody = null;
         isDraggingBox = false;
         lr.enabled = false;
     }
-
    
 
 
@@ -65,44 +83,55 @@ public class PlayerActions : NetworkBehaviour {
 
         if (Input.GetKeyDown(KeyCode.B)) {
                 if (!isDraggingBox) {
-
-                    if (currentCloseDraggableBox != null) {
-                        CmdStartDragBox(currentCloseDraggableBox.GetComponent<NetworkIdentity>().netId);
-                    }
+                    int n = transform.GetComponent<PolygonCollider2D>().OverlapCollider(cf, closeDraggableBox);
+                    if (n>0) {
+                        CmdStartDragBox(closeDraggableBox[0].gameObject.GetComponent<NetworkIdentity>().netId);
+                    }    
                 }
                 else {
                     CmdStopDragBox();
                 } 
         }
 
-        //USE HEALTHPOT
-        if (Input.GetKeyDown(KeyCode.P)) {
-           player.CmdUseHealthPot();
-        }
-    }
 
+        //activate spikes
 
-    void OnCollisionEnter2D(Collision2D coll) {
+        if (Input.GetKeyDown(KeyCode.B)) {
+            int n = transform.GetComponent<PolygonCollider2D>().OverlapCollider(cf2, closeControlBox);
+            if (n > 0) {
+                CmdChangeSpikeState(closeControlBox[0].gameObject.GetComponent<NetworkIdentity>().netId);
 
-        if (!player.isLocalPlayer) {
-            return;
-        }
-
-        if (coll.gameObject.tag == "DraggableBox") {
-            if (currentCloseDraggableBox == null) {
-                currentCloseDraggableBox = coll.gameObject;
             }
         }
 
-    }
 
-    void OnCollisionExit2D(Collision2D coll) {
-        if (!player.isLocalPlayer) {
-            return;
-        }
-
-        if (coll.gameObject.tag == "DraggableBox") {
-            currentCloseDraggableBox = null;
+        //USE HEALTHPOT
+        if (Input.GetKeyDown(KeyCode.P)) {
+            player.CmdUseHealthPot();
         }
     }
+
+    //change spikeControlBox
+
+    [Command]
+    public void CmdChangeSpikeState(NetworkInstanceId netId) {
+        
+        SpikeControlBox scb = ClientScene.FindLocalObject(netId).GetComponent<SpikeControlBox>();//to sync with server
+        RpcChangeSpikeState(netId, scb.isActivated);
+    }
+
+
+    [ClientRpc]
+    public void RpcChangeSpikeState(NetworkInstanceId netId, bool isActivated) {
+
+        SpikeControlBox scb = ClientScene.FindLocalObject(netId).GetComponent<SpikeControlBox>();
+        scb.isActivated = !isActivated;
+
+        foreach (GameObject go in scb.controlledBoxes) {
+            go.transform.Find("Spikes").GetComponent<Spikes>().changeActivated(scb.isActivated);
+
+        }
+    }
+
+
 }

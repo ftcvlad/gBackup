@@ -10,12 +10,18 @@ public class ObjectLevelDoor : MonoBehaviour {
 
 
     void OnTriggerEnter2D(Collider2D other) {
+
+        
         if (other.GetComponent<Player>().isLocalPlayer) {
             if (localPlayer == null) {
                 localPlayer = other.GetComponent<Player>();
             }
             playerClose = true;
         }
+        
+       
+
+       
     }
 
 

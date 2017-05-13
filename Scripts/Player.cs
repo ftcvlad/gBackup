@@ -39,11 +39,19 @@ public class Player : NetworkBehaviour {
 
 
     Color deadColor;
+    Color blinkColor;
+    ContactFilter2D cf;
+    Collider2D[] closeSpikesBox = new Collider2D[1];
+
     void Start() {
 
 
         deadColor = new Color();
         ColorUtility.TryParseHtmlString("#3A2424FF", out deadColor);
+
+
+        blinkColor = new Color();
+        ColorUtility.TryParseHtmlString("#FFFFFF58", out blinkColor);
 
         currHealth = maxHealth;
 
@@ -63,8 +71,10 @@ public class Player : NetworkBehaviour {
             Destroy(uioverlay.Find("ObservingMessage").gameObject);
         }
 
-    
-       
+        cf = new ContactFilter2D();
+        cf.SetLayerMask((1 << LayerMask.NameToLayer("SpikesBoxLayer")));
+
+
         UnityEngine.Object.DontDestroyOnLoad(this.gameObject);
     }
 
@@ -145,7 +155,7 @@ public class Player : NetworkBehaviour {
         }
         GetComponent<ThrowStone>().enabled = false;
 
-
+        GetComponent<PlayerActions>().stopDraggingBox();
     }
 
 
@@ -368,8 +378,82 @@ public class Player : NetworkBehaviour {
 
     }
 
+    public bool isDamageable = true;//only on server correct
     
 
+
+    //SPIKES damage
+
+    
+    public void enterSpikes(int damage) {
+        if (isDamageable) {
+            StartCoroutine(shit(damage));
+        }
+    }
+
+ 
+
+    IEnumerator shit(int damage) {
+        int n = transform.GetComponent<PolygonCollider2D>().OverlapCollider(cf, closeSpikesBox);
+        if (n>0) {//if collides with any spikes
+            isDamageable = false;
+            RpcTakeDamageFromSpikes(damage);
+        }
+        else {
+            isDamageable = true;
+            RpcStopBlinkingPlayer();
+            yield break;
+        }
+       
+        yield return new WaitForSeconds(3f);
+        StartCoroutine(shit(damage));
+    }
+
+    [ClientRpc]
+    public void RpcTakeDamageFromSpikes(int damageAmount) {
+        if (isLocalPlayer) {
+            transform.GetComponent<Rigidbody2D>().AddForce(new Vector2(0,300));
+        }
+
+        if (!IsInvoking("blinkPlayer")) {
+            InvokeRepeating("blinkPlayer", 0, 0.2f);
+        }
+        reduceHealth(damageAmount);
+        if (currHealth <= 0) {
+
+            deactivateDeadPlayer();
+            loseItemsAndGold();
+
+            isDamageable = true;
+            stopBlinkingPlayer();
+            if (isServer) {
+                ServerGM.handlePlayerDied(this);
+            }
+        }
+
+    }
+
+    void blinkPlayer() {
+        if (graphics.GetComponent<SpriteRenderer>().color == blinkColor) {
+            graphics.GetComponent<SpriteRenderer>().color = Color.white;
+        }
+        else {
+            graphics.GetComponent<SpriteRenderer>().color = blinkColor;
+        } 
+    }
+
+    [ClientRpc]
+    void RpcStopBlinkingPlayer() {
+        stopBlinkingPlayer();
+    }
+
+    void stopBlinkingPlayer() {
+        CancelInvoke("blinkPlayer");
+        graphics.GetComponent<SpriteRenderer>().color = Color.white;
+    }
+
+
+  
 
     //public void damagePlayer(int damageAmount) {//LOCAL VERSION. STONE TRAP NOT SYNCHRONISED :(
     //    if (hasKey) {

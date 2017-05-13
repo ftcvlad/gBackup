@@ -51,10 +51,6 @@ public class StoneController : NetworkBehaviour {
             }
 
 
-
-
-
-
         }
             else if (collLayerName == "Ground") {
             //particles
