@@ -15,7 +15,7 @@ public class Spikes : MonoBehaviour {
     float timeToReachTarget = 1f;//time of transition
 
     Vector3 topTargetY = new Vector3(0, 0.34f, 0);
-    Vector3 bottomTargetY = new Vector3(0, 0.14f, 0);
+    Vector3 bottomTargetY = new Vector3(0, 0.04f, 0);
     Vector3 currentTarget;
 
 

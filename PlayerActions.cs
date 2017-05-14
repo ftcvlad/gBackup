@@ -126,6 +126,7 @@ public class PlayerActions : NetworkBehaviour {
 
         SpikeControlBox scb = ClientScene.FindLocalObject(netId).GetComponent<SpikeControlBox>();
         scb.isActivated = !isActivated;
+        scb.updateOwnColor();
 
         foreach (GameObject go in scb.controlledBoxes) {
             go.transform.Find("Spikes").GetComponent<Spikes>().changeActivated(scb.isActivated);
