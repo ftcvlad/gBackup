@@ -65,8 +65,6 @@ namespace Prototype.NetworkLobby
             DontDestroyOnLoad(gameObject);
 
             SetServerInfo("Offline", "None");
-
-
         }
 
         public override void OnLobbyClientSceneChanged(NetworkConnection conn)
@@ -168,6 +166,7 @@ namespace Prototype.NetworkLobby
 
         // ----------------- Server management
 
+           
         public void AddLocalPlayer()
         {
             TryToAddPlayer();

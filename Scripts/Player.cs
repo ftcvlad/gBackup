@@ -16,6 +16,7 @@ public class Player : NetworkBehaviour {
     public int maxHealth = 100;
     public int currHealth;
     int teamId;
+    string playerName;
     [SyncVar] int playerId;
     [SyncVar(hook = "updateStoneTileHook")] public int numStonesPossessed = 3;
     [SyncVar(hook = "updateHealthPotsTileHook")] public int numHealthPotsPossessed = 0;
@@ -76,10 +77,15 @@ public class Player : NetworkBehaviour {
 
 
         UnityEngine.Object.DontDestroyOnLoad(this.gameObject);
+
+     
+            Debug.Log("player start");
+       
     }
 
     public override void OnStartLocalPlayer() {
-       
+        Debug.Log("2.  OnStartLocalPlayer");
+
         //SEQUENCE:
         //0 server. Objects initialised on server
         //1 client. OnStartClient is called for allGM (all objects except player initialised)
@@ -387,13 +393,13 @@ public class Player : NetworkBehaviour {
     
     public void enterSpikes(int damage) {
         if (isDamageable) {
-            StartCoroutine(shit(damage));
+            StartCoroutine(checkSpikeCollisionRecursively(damage));
         }
     }
 
  
 
-    IEnumerator shit(int damage) {
+    IEnumerator checkSpikeCollisionRecursively(int damage) {
         int n = transform.GetComponent<PolygonCollider2D>().OverlapCollider(cf, closeSpikesBox);
         if (n>0) {//if collides with any spikes
             isDamageable = false;
@@ -406,7 +412,7 @@ public class Player : NetworkBehaviour {
         }
        
         yield return new WaitForSeconds(3f);
-        StartCoroutine(shit(damage));
+        StartCoroutine(checkSpikeCollisionRecursively(damage));
     }
 
     [ClientRpc]
@@ -489,6 +495,14 @@ public class Player : NetworkBehaviour {
         return playerId;
     }
 
+
+    public void setName(string name) {
+        playerName = name;
+    }
+
+    public string getName() {
+        return playerName;
+    }
 }
 
     

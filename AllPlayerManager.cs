@@ -19,10 +19,19 @@ public class AllPlayerManager : NetworkBehaviour {
     public static int playersToNextLevel =0;//number of players that should finish to go to next level
 
  
+    public static int getActivePlayerCount() {
+        return allActivePlayers.Count;
+    }
+
+    void Awake() {
+        Debug.Log("allPlayerManagerAwake");
+        ag = GameObject.Find("allGM").GetComponent<allGM>();
+    }
+
 
     void Start() {
-        
-        ag = GameObject.Find("allGM").GetComponent<allGM>();
+        Debug.Log("allPlayerManagerStart");
+       
         NetworkServer.RegisterHandler(1001, OnGiveNextPlayerToObserve);
 
        
@@ -33,16 +42,22 @@ public class AllPlayerManager : NetworkBehaviour {
     public static void addPlayer(Player p) {
         allActivePlayers.Add(p);
 
-        p.setTeamId(allActivePlayers.Count);//temporary!
+       
         p.setPlayerId(allActivePlayers.Count);
 
         totalPlayers++;
         playersActive++;
         playersToNextLevel = getPlayersToNextLevel(false,playersActive);
 
+
+
+        //ALLGM NOT SPAWNED WHEN 1 PLAYER WITH LOBBY
         ag.RpcUpdatePlayerCountFrame(playersActive, playersFinished, playersToNextLevel);
        
     }
+
+
+
 
     static int getPlayersToNextLevel(bool isShop, int activePlayers) {
         if (isShop) {

@@ -6,10 +6,16 @@ using Prototype.NetworkLobby;
 
 public class PlayerColor_hook : LobbyHook {
     public override void OnLobbyServerSceneLoadedForPlayer(NetworkManager manager, GameObject lobbyPlayer, GameObject gamePlayer) {
+        Debug.Log("OnLobbyServerSceneLoadedForPlayer");
+       
         LobbyPlayer lp = lobbyPlayer.GetComponent<LobbyPlayer>();
-        PlayerColor pc = gamePlayer.GetComponent<PlayerColor>();
+        PlayerTeam pt = gamePlayer.GetComponent<PlayerTeam>();
 
-        pc.color = lp.playerColor; 
+        pt.team = lp.playerTeam;
+        pt.name = lp.playerName;
+        pt.color = LobbyPlayer.Colors[lp.playerTeam-1];
+
+
     }
 	
 }

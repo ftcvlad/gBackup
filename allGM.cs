@@ -35,10 +35,18 @@ public class allGM : NetworkBehaviour {
     public int timeToViewResults = 3;
     [SyncVar(hook = "updateTimeLeftUntilNextLevel")] public int timeUntilNextLevel = 3;
 
-   
-    void Start() {
 
-       
+    override public void OnStartClient() {
+        Debug.Log(" .allGm OnStartClient");
+    }
+
+    override public void OnStartServer() {
+        Debug.Log(" .allGm OnStartServer");
+    }
+
+    void Start() {
+        Debug.Log("  allGm Start");
+
 
         NetworkManager.singleton.client.RegisterHandler(1000, switchPlayer);
 

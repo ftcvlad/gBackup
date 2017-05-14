@@ -7,6 +7,8 @@ public class StatusBarManager : MonoBehaviour {
 
     Transform healthBar;
 	void Start () {
+
+        
         healthBar = (Transform)transform.Find("HealthBar");
 	}
 	

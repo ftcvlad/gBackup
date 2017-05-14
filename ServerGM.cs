@@ -63,6 +63,7 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
     }
 
     void OnLevelFinishedLoading(Scene scene, LoadSceneMode mode) {
+        Debug.Log("OnLevelFinishedLoading");
         levelInitialise(false);
     }
 

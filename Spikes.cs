@@ -6,7 +6,7 @@ using UnityEngine;
 public class Spikes : MonoBehaviour {
 
 
-
+  
     int damage = 20;
    
 
@@ -43,20 +43,13 @@ public class Spikes : MonoBehaviour {
 
  
 
-
-
     void OnCollisionEnter2D(Collision2D other) {
         if (other.gameObject.tag == "Player") {
             Player p = other.gameObject.GetComponent<Player>();
-
-
             if (p.isServer) {
-               
                 p.enterSpikes(damage);
             }
-           
-        }
-           
+        } 
     }
 
  }

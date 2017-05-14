@@ -27,6 +27,7 @@ public class SpikeControlBox : NetworkBehaviour {
 
         foreach (GameObject go in controlledBoxes) {
             go.transform.Find("Canvas").Find("Text").GetComponent<Text>().text = letter;
+            go.transform.Find("Spikes").GetComponent<Spikes>().changeActivated(isActivated);
         }
 
         ownLetterText = transform.Find("Canvas").Find("Text").GetComponent<Text>();
