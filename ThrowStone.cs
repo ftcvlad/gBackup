@@ -109,13 +109,26 @@ public class ThrowStone : NetworkBehaviour {
 
         if (Mathf.Abs(Input.GetAxis("Mouse ScrollWheel"))>0) {
        
-            float deltaRot = Input.GetAxis("Mouse ScrollWheel") * Time.deltaTime * 50*100;
+            float deltaRot = Input.GetAxis("Mouse ScrollWheel") * Time.deltaTime * 45*100;
             float currAngle = arm.localEulerAngles.z;
             currAngle = (currAngle > 180) ? currAngle - 360 : currAngle;
             if (Mathf.Abs(currAngle + deltaRot) < maxBendAngle) {
                 arm.Rotate(new Vector3(0, 0, deltaRot));
             }
-         
+            else {
+                if (deltaRot > 0) {
+                    deltaRot = maxBendAngle - currAngle;
+                }
+                else {
+                    deltaRot = -(maxBendAngle + currAngle);
+                }
+
+                arm.Rotate(new Vector3(0, 0, deltaRot));
+              
+            }
+       
+
+
         }
 
         if (Input.GetKeyDown("t")) {
@@ -138,7 +151,7 @@ public class ThrowStone : NetworkBehaviour {
 
       
         if (isDrawTrajectory) {//arm.position
-            drawTraj(end.position, (end.position - start.position).normalized * stoneSpeed * Time.fixedDeltaTime / stoneMass);
+            drawTraj(start.position, (end.position - start.position).normalized * stoneSpeed * Time.fixedDeltaTime / stoneMass);
         }
         
 
@@ -165,12 +178,10 @@ public class ThrowStone : NetworkBehaviour {
         
 
         if (playerInst.numStonesPossessed > 0) {//sort of for anti-cheating on client
-           // playerInst.updateStoneAmount(-1);
+           
             playerInst.numStonesPossessed -= 1;//syncVar changed, and hook called on server and clients
 
-            GameObject stone = Instantiate(stonePref, end.position, arm.rotation);//Start on it not called before the method returns!
-            stone.GetComponent<StoneController>().playerTeamId = playerBody.parent.GetComponent<Player>().getTeamId();
-
+            GameObject stone = Instantiate(stonePref, start.position, arm.rotation);//Start on it not called before the method returns!
 
 
 
@@ -198,10 +209,18 @@ public class ThrowStone : NetworkBehaviour {
         NetworkServer.Destroy(obj);//destroys both on Server and Client
     }
 
+   
 
     void drawTraj(Vector2 pos, Vector2 velocity) {
 
-       
+
+
+        for (int j = 0; j < 5; j++) {
+            velocity += Physics2D.gravity * rb.gravityScale * Time.fixedDeltaTime / (stoneMass);
+            pos += velocity * Time.fixedDeltaTime;
+        }
+
+
         int count = 0;
         int i = -1;
         Vector2 prevPos = pos;
@@ -209,10 +228,10 @@ public class ThrowStone : NetworkBehaviour {
         while (count < vertCount) {
             i++;
 
+          
 
-            if (i%everyNth==0) {
-
-                
+            if ((i%everyNth)==0) {
+               
                 RaycastHit2D hit = Physics2D.Raycast(prevPos, pos, Vector3.Distance(prevPos, pos), whatToHit);
 
                 if (hit.collider != null) {
@@ -221,7 +240,7 @@ public class ThrowStone : NetworkBehaviour {
                         trajectoryPoints[j].GetComponent<SpriteRenderer>().enabled = false;
                     }
                    
-                    //Debug.Log(count + "=="+ prevPos.ToString()+"=="+pos.ToString()+"=="+ Vector3.Distance(prevPos, pos));
+                    
                     break;
                 }
                 else {
@@ -234,16 +253,16 @@ public class ThrowStone : NetworkBehaviour {
                 count++;
 
             }
-
+            
             prevPos = pos;
 
-           // Debug.Log(Physics2D.gravity+"--"+rb.gravityScale);
+          
             velocity += Physics2D.gravity * rb.gravityScale* Time.fixedDeltaTime/(stoneMass);
             pos += velocity * Time.fixedDeltaTime;
         }
+     
 
-   
-}
+    }
 
 
 }

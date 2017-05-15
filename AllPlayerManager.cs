@@ -42,8 +42,6 @@ public class AllPlayerManager : NetworkBehaviour {
     public static void addPlayer(Player p) {
         allActivePlayers.Add(p);
 
-       
-        p.setPlayerId(allActivePlayers.Count);
 
         totalPlayers++;
         playersActive++;
@@ -132,7 +130,7 @@ public class AllPlayerManager : NetworkBehaviour {
 
         PlayerResult result = new PlayerResult();
         int totalSize = allFinishedPlayers.Count + allActivePlayers.Count;
-        result.allPlayerIds = new int[totalSize];
+        result.allPlayerNetIds = new NetworkInstanceId[totalSize];
         result.allPlaces = new int[totalSize];
         result.allGoldWon = new int[totalSize];
 
@@ -156,7 +154,7 @@ public class AllPlayerManager : NetworkBehaviour {
         int goldWon = 0;
         foreach (Player p in allFinishedPlayers) {
 
-            result.allPlayerIds[i] = p.getPlayerId();
+            result.allPlayerNetIds[i] = p.netId;
             result.allPlaces[i] = i + 1;
             goldWon = (totalPlayersFinished - i) * perPlaceGoldStep;
             if (p.getTeamId()== winningTeamId) {
@@ -169,7 +167,7 @@ public class AllPlayerManager : NetworkBehaviour {
         }
 
         foreach (Player p in allActivePlayers) {
-            result.allPlayerIds[i] = p.getPlayerId();
+            result.allPlayerNetIds[i] = p.netId;
             result.allPlaces[i] = totalPlayersFinished + 1;
             result.allGoldWon[i] = goldForUnfinished;
             p.gold += result.allGoldWon[i];//[SyncVar]
@@ -226,9 +224,9 @@ public class AllPlayerManager : NetworkBehaviour {
 
  
 
-    public static void playerFinished(int id) {
+    public static void playerFinished(NetworkInstanceId netId) {
         for (int i = 0; i < allActivePlayers.Count; i++) {
-            if (allActivePlayers[i].getPlayerId() == id) {
+            if (allActivePlayers[i].netId == netId) {
                 allFinishedPlayers.Add(allActivePlayers[i]);
                 allActivePlayers.RemoveAt(i);
                 playersActive--;
@@ -239,9 +237,9 @@ public class AllPlayerManager : NetworkBehaviour {
         }
     }
 
-    public static void playerDied(int id) {
+    public static void playerDied(NetworkInstanceId netId) {
         for (int i = 0; i < allActivePlayers.Count; i++) {
-            if (allActivePlayers[i].getPlayerId() == id) {
+            if (allActivePlayers[i].netId == netId) {
                 allDeadPlayers.Add(allActivePlayers[i]);
                 allActivePlayers.RemoveAt(i);
                 playersActive--;
@@ -269,13 +267,13 @@ public class AllPlayerManager : NetworkBehaviour {
         Debug.Log("message received by server");
 
         var msgReceived = netMsg.ReadMessage<RequestNextPlayerMessage>();
-        int currObservedPlayerId = msgReceived.currObservedPlayerId;
+        NetworkInstanceId currObservedPlayerId = msgReceived.currObservedPlayerId;
         NetworkInstanceId requesterId = msgReceived.localPlayerNetId;
 
         int i = 0;
 
         for (; i < allActivePlayers.Count; i++) {
-            if (allActivePlayers[i].getPlayerId() == currObservedPlayerId) {
+            if (allActivePlayers[i].netId == currObservedPlayerId) {
                 break;
             }
         }

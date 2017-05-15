@@ -15,9 +15,13 @@ public class Player : NetworkBehaviour {
    
     public int maxHealth = 100;
     public int currHealth;
-    int teamId;
-    string playerName;
-    [SyncVar] int playerId;
+    [SyncVar]     public int team;
+    [SyncVar]     public string playerName;
+    [SyncVar]    public Color color;
+
+
+   
+    
     [SyncVar(hook = "updateStoneTileHook")] public int numStonesPossessed = 3;
     [SyncVar(hook = "updateHealthPotsTileHook")] public int numHealthPotsPossessed = 0;
     
@@ -41,18 +45,13 @@ public class Player : NetworkBehaviour {
 
     Color deadColor;
     Color blinkColor;
-    ContactFilter2D cf;
-    Collider2D[] closeSpikesBox = new Collider2D[1];
+   
 
     void Start() {
 
 
-        deadColor = new Color();
-        ColorUtility.TryParseHtmlString("#3A2424FF", out deadColor);
+        
 
-
-        blinkColor = new Color();
-        ColorUtility.TryParseHtmlString("#FFFFFF58", out blinkColor);
 
         currHealth = maxHealth;
 
@@ -65,23 +64,41 @@ public class Player : NetworkBehaviour {
         itemDispMan = uioverlay.Find("PersonalItemList").GetComponent<ItemDisplayManager>();
         
         if (!isLocalPlayer) {
-            uioverlay.Find("ObservingMessage").Find("Text").GetComponent<Text>().text = "Observing player " + playerId + ". Press n to switch to next player.";
+            uioverlay.Find("ObservingMessage").Find("Text").GetComponent<Text>().text = "Observing player " + playerName + ". Press n to switch to next player.";
         }
         else {
             graphics.GetComponent<SpriteRenderer>().sortingOrder = 5;
             Destroy(uioverlay.Find("ObservingMessage").gameObject);
         }
 
-        cf = new ContactFilter2D();
-        cf.SetLayerMask((1 << LayerMask.NameToLayer("SpikesBoxLayer")));
+   
 
 
         UnityEngine.Object.DontDestroyOnLoad(this.gameObject);
 
-     
-            Debug.Log("player start");
-       
+
+        deadColor = new Color();
+        ColorUtility.TryParseHtmlString("#3A2424FF", out deadColor);
+        blinkColor = new Color();
+        ColorUtility.TryParseHtmlString("#FFFFFF58", out blinkColor);
+
+        if (team != 0) {
+            graphics.GetComponent<SpriteRenderer>().color = color;
+          
+        }
+        else {//**if run scene without lobby
+            Color[] Colors = new Color[] { Color.red, Color.green, Color.blue, Color.cyan, Color.yellow, Color.white };
+
+            tempPlayerTot++;
+            color = Colors[tempPlayerTot - 1];
+            graphics.GetComponent<SpriteRenderer>().color = color;
+            playerName = "Player-" + tempPlayerTot;
+            team = tempPlayerTot;
+        }
+
     }
+
+    static int tempPlayerTot = 0;//**
 
     public override void OnStartLocalPlayer() {
         Debug.Log("2.  OnStartLocalPlayer");
@@ -189,7 +206,7 @@ public class Player : NetworkBehaviour {
     [ClientRpc]
     public void RpcHideDeadPlayer() {
         SpriteRenderer sr = graphics.GetComponent<SpriteRenderer>();
-        sr.color = Color.white;//destroy after 1 sec to allow bullet on clients hit it (and make bullet disappear timely)
+        sr.color = color;//destroy after 1 sec to allow bullet on clients hit it (and make bullet disappear timely)
        
         if (isLocalPlayer) {
             sr.sortingOrder = 5;
@@ -239,7 +256,7 @@ public class Player : NetworkBehaviour {
     [Command]
     public void CmdExitShop() {
         RpcDeactivateFinishedPlayer();
-        AllPlayerManager.playerFinished(playerId);
+        AllPlayerManager.playerFinished(netId);
 
         if (AllPlayerManager.isPlayersToEndReached()) {//???
             StartCoroutine(ServerGM.finishLevel());
@@ -251,7 +268,7 @@ public class Player : NetworkBehaviour {
         RpcKeyUsed();
         RpcDeactivateFinishedPlayer();
 
-        AllPlayerManager.playerFinished(playerId);
+        AllPlayerManager.playerFinished(netId);
 
         if (AllPlayerManager.isPlayersToEndReached()) {//end level
             StartCoroutine(ServerGM.finishLevel());
@@ -400,8 +417,10 @@ public class Player : NetworkBehaviour {
  
 
     IEnumerator checkSpikeCollisionRecursively(int damage) {
-        int n = transform.GetComponent<PolygonCollider2D>().OverlapCollider(cf, closeSpikesBox);
-        if (n>0) {//if collides with any spikes
+
+        GameObject go = PlayerActions.checkPlayerOverlapBox(transform,"SpikedBox");
+      
+        if (go!=null) {//if collides with any spikes
             isDamageable = false;
             RpcTakeDamageFromSpikes(damage);
         }
@@ -480,29 +499,13 @@ public class Player : NetworkBehaviour {
 
 
     public void setTeamId(int id) {
-        teamId = id;
+        team = id;
     }
 
     public int getTeamId() {
-        return teamId;
+        return team;
     }
 
-    public void setPlayerId(int id) {
-        playerId = id;
-    }
-
-    public int getPlayerId() {
-        return playerId;
-    }
-
-
-    public void setName(string name) {
-        playerName = name;
-    }
-
-    public string getName() {
-        return playerName;
-    }
 }
 
     

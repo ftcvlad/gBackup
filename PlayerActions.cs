@@ -10,25 +10,25 @@ public class PlayerActions : NetworkBehaviour {
     LineRenderer lr;
     Player player;
 
-    ContactFilter2D cf;
-    Collider2D[] closeDraggableBox = new Collider2D[1];
 
-    ContactFilter2D cf2;
-    Collider2D[] closeControlBox = new Collider2D[1];
+    static ContactFilter2D cf;
+    static Collider2D[] closeGround = new Collider2D[10];
+
+    GameObject helpFrame = null;
+    Rigidbody2D rb;
+
 
     void Start () {
         dj = GetComponent<DistanceJoint2D>();
         lr = transform.Find("Rope").GetComponent<LineRenderer>();
         player = transform.GetComponent<Player>();
 
-
         cf = new ContactFilter2D();
-        cf.SetLayerMask((1 << LayerMask.NameToLayer("DraggableBoxLayer")));
+        cf.SetLayerMask((1 << LayerMask.NameToLayer("Ground")));
 
-        cf2 = new ContactFilter2D();
-        cf2.SetLayerMask((1 << LayerMask.NameToLayer("ControlBoxLayer")));
+        
 
-
+        rb = GetComponent<Rigidbody2D>();
     }
 
 
@@ -81,11 +81,27 @@ public class PlayerActions : NetworkBehaviour {
             return;
         }
 
+
+        //SHOW HELP
+        if (Input.GetKeyDown(KeyCode.H)) {
+
+            if (helpFrame==null) {
+                helpFrame = GameObject.Find("allGM").transform.Find("LevelUI").Find("HelpFrame").gameObject;//to search for inactive object
+            }
+            helpFrame.SetActive(!helpFrame.activeSelf);
+        }
+
+        if (rb.isKinematic) {//if can't move, can't use boxes as well
+            return;
+        }
+
         if (Input.GetKeyDown(KeyCode.B)) {
                 if (!isDraggingBox) {
-                    int n = transform.GetComponent<PolygonCollider2D>().OverlapCollider(cf, closeDraggableBox);
-                    if (n>0) {
-                        CmdStartDragBox(closeDraggableBox[0].gameObject.GetComponent<NetworkIdentity>().netId);
+
+                    GameObject go = checkPlayerOverlapBox(transform,"DraggableBox");
+
+                    if (go!=null) {
+                        CmdStartDragBox(go.GetComponent<NetworkIdentity>().netId);
                     }    
                 }
                 else {
@@ -97,11 +113,13 @@ public class PlayerActions : NetworkBehaviour {
         //activate spikes
 
         if (Input.GetKeyDown(KeyCode.B)) {
-            int n = transform.GetComponent<PolygonCollider2D>().OverlapCollider(cf2, closeControlBox);
-            if (n > 0) {
-                CmdChangeSpikeState(closeControlBox[0].gameObject.GetComponent<NetworkIdentity>().netId);
 
+            GameObject go = checkPlayerOverlapBox(transform, "ControlBox");
+
+            if (go != null) {
+                CmdChangeSpikeState(go.GetComponent<NetworkIdentity>().netId);
             }
+
         }
 
 
@@ -109,7 +127,13 @@ public class PlayerActions : NetworkBehaviour {
         if (Input.GetKeyDown(KeyCode.P)) {
             player.CmdUseHealthPot();
         }
+
+
+        
     }
+
+
+
 
     //change spikeControlBox
 
@@ -134,5 +158,27 @@ public class PlayerActions : NetworkBehaviour {
         }
     }
 
+
+    public static GameObject checkPlayerOverlapBox(Transform playerTrans, string targetTag) {
+
+        closeGround = new Collider2D[10];
+        int n = playerTrans.GetComponent<PolygonCollider2D>().OverlapCollider(cf, closeGround);
+
+
+        if (n == 0) {
+            return null;
+        }
+        else {
+            for (int i = 0; i < closeGround.Length; i++) {
+                if (closeGround[i] == null) {
+                    return null;
+                }
+                if (closeGround[i].gameObject.tag == targetTag) {
+                    return closeGround[i].gameObject;
+                }
+            }
+            return null;
+        }
+    }
 
 }

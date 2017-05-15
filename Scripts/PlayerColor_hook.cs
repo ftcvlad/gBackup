@@ -9,11 +9,11 @@ public class PlayerColor_hook : LobbyHook {
         Debug.Log("OnLobbyServerSceneLoadedForPlayer");
        
         LobbyPlayer lp = lobbyPlayer.GetComponent<LobbyPlayer>();
-        PlayerTeam pt = gamePlayer.GetComponent<PlayerTeam>();
+        Player p = gamePlayer.GetComponent<Player>();
 
-        pt.team = lp.playerTeam;
-        pt.name = lp.playerName;
-        pt.color = LobbyPlayer.Colors[lp.playerTeam-1];
+        p.team = lp.playerTeam;
+        p.playerName = lp.playerName;
+        p.color = LobbyPlayer.Colors[lp.playerTeam-1];
 
 
     }

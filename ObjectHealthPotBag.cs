@@ -69,21 +69,26 @@ public class ObjectHealthPotBag : MonoBehaviour {
 
 
         void OnTriggerEnter2D(Collider2D other) {
-            if (other.GetComponent<Player>().isLocalPlayer) {
-                if (localPlayer == null) {
-                    localPlayer = other.GetComponent<Player>();
+            if (other.gameObject.tag == "Player") {
+                if (other.GetComponent<Player>().isLocalPlayer) {
+                    if (localPlayer == null) {
+                        localPlayer = other.GetComponent<Player>();
+                    }
+                    playerClose = true;
                 }
-                playerClose = true;
+
             }
 
         }
 
 
-        void OnTriggerExit2D(Collider2D other) {
+    void OnTriggerExit2D(Collider2D other) {
+        if (other.gameObject.tag == "Player") {
             if (other.GetComponent<Player>().isLocalPlayer) {
                 playerClose = false;
             }
         }
+    }
 }
 
 

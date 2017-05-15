@@ -20,8 +20,9 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
 
 
     System.Random rg;
-    float stone_TimeToSpawn = 3f;//every 3 sec check if need to spawn stone
-    float stone_SpawnRate = 1 / 3f;
+    float stone_TimeToSpawn = 3f;
+    float stone_SpawnRate = 3f;//every 3 sec check if need to spawn stone
+    float stoneSpawnNumberFactor = 0.8f;//how many stones should be present in % from # of StoneSpawnPoints
     int currStonesPresent = 0;
     Transform stoneSpawnPointsFolder;
     Transform keyPotSpawnPointsFolder;
@@ -102,7 +103,10 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
     public void spawnKeyPot() {
         List<Transform> keyPot_spawnPoints = new List<Transform>();
         foreach (Transform child in keyPotSpawnPointsFolder) {
-            keyPot_spawnPoints.Add(child);
+            if (child.gameObject.activeSelf) {
+                keyPot_spawnPoints.Add(child);
+            }
+            
         }
         Transform loc = keyPot_spawnPoints[rg.Next(0, keyPot_spawnPoints.Count)];
 
@@ -122,7 +126,7 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
             stone_freeIndexes.Add(stone_freeIndexes.Count);
         }
 
-        stone_maxPresent = stone_spawnPositions.Count;
+        stone_maxPresent = (int) Mathf.Floor(stone_spawnPositions.Count* stoneSpawnNumberFactor);
 
         currStonesPresent = 0;
         spawnNstones(stone_maxPresent);
@@ -170,7 +174,7 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
 
         if (!isCurrentSceneShop) {
             if (Time.time > stone_TimeToSpawn) {//GetButton true while mouse pressed!
-                stone_TimeToSpawn = Time.time + 1 / stone_SpawnRate;
+                stone_TimeToSpawn = Time.time + stone_SpawnRate;
                 if (currStonesPresent < stone_maxPresent) {
                     spawnNstones(1);
                 }
@@ -250,7 +254,7 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
             //deactivate remaining players
             AllPlayerManager.finishRemainingPlayers();
 
-            allGMInst.RpcDisplayLevelResults(result.allPlaces, result.allPlayerIds, result.allGoldWon);
+            allGMInst.RpcDisplayLevelResults(result.allPlaces, result.allPlayerNetIds, result.allGoldWon);
 
             instanceSelf.InvokeRepeating("reduceTimeUntilNextLevel", 1, 1f);
         }
@@ -269,7 +273,7 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
     }
 
     public static void handlePlayerDied(Player p) {
-        AllPlayerManager.playerDied(p.getPlayerId());//update arrays; update player counts;
+        AllPlayerManager.playerDied(p.netId);//update arrays; update player counts;
 
         allGMInst.RpcUpdatePlayerCountFrame(AllPlayerManager.playersActive, AllPlayerManager.playersFinished, AllPlayerManager.playersToNextLevel);
         if (AllPlayerManager.playersFinished + AllPlayerManager.playersActive > 0) {
@@ -298,7 +302,7 @@ public class ServerGM : NetworkBehaviour {//EXISTS ONLY ON SERVER
 
 public struct PlayerResult {
 
-    public int[] allPlayerIds { get; set; }
+    public NetworkInstanceId[] allPlayerNetIds { get; set; }
     public int[] allPlaces { get; set; }
     public int[] allGoldWon { get; set; }
 

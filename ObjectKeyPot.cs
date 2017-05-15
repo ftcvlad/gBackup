@@ -10,12 +10,13 @@ public class ObjectKeyPot : MonoBehaviour {
 
     void OnTriggerEnter2D(Collider2D other) {//when player finds key
 
-        Player p = other.GetComponent<Player>();
-        if (!p.hasKey) {
-
-            other.GetComponent<Player>().keyFound();
-
+        if (other.gameObject.tag == "Player") {
+            Player p = other.GetComponent<Player>();
+            if (!p.hasKey) {
+                other.GetComponent<Player>().keyFound();
+            }
         }
+        
     }
 
     

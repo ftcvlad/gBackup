@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 public class RequestNextPlayerMessage : MessageBase {
     public NetworkInstanceId localPlayerNetId;
-    public int currObservedPlayerId;
+    public NetworkInstanceId currObservedPlayerId;
 
 }
 
@@ -15,7 +15,7 @@ public class allGM : NetworkBehaviour {
    
 
     public static NetworkInstanceId localPlayerNetId;//set in Player
-    static int currObservedPlayerId;
+    static NetworkInstanceId currObservedPlayerId;
     static MovingPlayer currentMovingPlayer = null;
     static Player currentPlayer = null;
 
@@ -135,7 +135,7 @@ public class allGM : NetworkBehaviour {
     }
 
     [ClientRpc]
-    public void RpcDisplayLevelResults(int[] allPlaces, int[] allPlayerNames, int[] allGoldWon) {
+    public void RpcDisplayLevelResults(int[] allPlaces, NetworkInstanceId[] allPlayerNetIds, int[] allGoldWon) {
 
         
         //delete previous results if any
@@ -147,12 +147,18 @@ public class allGM : NetworkBehaviour {
 
         //activate result frame
         //add row for each player result
+        Player nextPlayerTeamInfo;
         for (int i = 0; i < allPlaces.Length; i++) {
             
             GameObject g = GameObject.Instantiate(rowPref, table);
             g.transform.Find("Place").Find("Text").GetComponent<Text>().text = ""+allPlaces[i];
-            g.transform.Find("PlayerName").Find("Text").GetComponent<Text>().text = "" + allPlayerNames[i];
             g.transform.Find("GoldWon").Find("Text").GetComponent<Text>().text = "" + allGoldWon[i];
+
+            nextPlayerTeamInfo = ClientScene.FindLocalObject(allPlayerNetIds[i]).GetComponent<Player>();
+
+            g.transform.Find("Team").Find("TeamColor").GetComponent<Image>().color = nextPlayerTeamInfo.color;
+            g.transform.Find("PlayerName").Find("Text").GetComponent<Text>().text = "" + nextPlayerTeamInfo.playerName;
+            
 
             resultsui.gameObject.SetActive(true);
         }
@@ -179,7 +185,7 @@ public class allGM : NetworkBehaviour {
         GameObject go = ClientScene.FindLocalObject(msg.netId);
         currentPlayer = go.GetComponent<Player>();
         currentMovingPlayer = go.GetComponent<MovingPlayer>();
-        currObservedPlayerId = currentPlayer.getPlayerId();
+        currObservedPlayerId = currentPlayer.netId;
         currentMovingPlayer.enabled = true;
         Transform uioverlay = currentPlayer.transform.Find("UIoverlay");
         uioverlay.gameObject.SetActive(true);
