@@ -8,7 +8,7 @@ public class StoneController : NetworkBehaviour {
     public LayerMask whatToHit;
     public Transform stoneBreakParticlesPrefab;
 
-    bool canHitPlayer = false;//since starts inside player 
+    public bool canHitPlayer = false;//since starts inside player 
 
 
     [SerializeField] int damageAmount = 40;

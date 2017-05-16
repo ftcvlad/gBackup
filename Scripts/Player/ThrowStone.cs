@@ -30,7 +30,6 @@ public class ThrowStone : NetworkBehaviour {
     public int everyNth = 3;
     public LayerMask whatToHit;
 
-    GameObject ThrownStonesParent;
 
     Player playerInst;
     Transform arm;
@@ -59,7 +58,7 @@ public class ThrowStone : NetworkBehaviour {
         end = (Transform)arm.Find("endDirection");
 
 
-        ThrownStonesParent = GameObject.Find("GroupThrownStones");
+        //ThrownStonesParent = GameObject.Find("GroupThrownStones");
 
         if (isLocalPlayer) {
             trajectoryPoints = new List<GameObject>();
@@ -71,28 +70,9 @@ public class ThrowStone : NetworkBehaviour {
         }
 
 
-
-
-        if (!isServer && isLocalPlayer) {//register custom spawn functions on clients
-            NetworkHash128 stoneAssetId = stonePref.GetComponent<NetworkIdentity>().assetId;
-            ClientScene.RegisterSpawnHandler(stoneAssetId, SpawnStone, UnSpawnStone);
-        }
-
-
-
-
     }
 
-    public GameObject SpawnStone(Vector3 position, NetworkHash128 assetId) {
-        GameObject stone = (GameObject)Instantiate(stonePref,position, Quaternion.identity);
-        stone.transform.parent = ThrownStonesParent.transform;
-        return stone;
-    }
-
-    public void UnSpawnStone(GameObject spawned) {
-        Destroy(spawned);
-    }
-
+  
 
 
     int maxBendAngle = 80;
@@ -178,24 +158,22 @@ public class ThrowStone : NetworkBehaviour {
         
 
         if (playerInst.numStonesPossessed > 0) {//sort of for anti-cheating on client
-           
+            GameObject stone = ThrownStoneObjectPool.GetFromPool(start.position);
+
+            if (stone == null) {//no objects in pull, shouldn't happen
+                Debug.LogError("no objects in pool, increase pool size");
+                return;
+            }
+
             playerInst.numStonesPossessed -= 1;//syncVar changed, and hook called on server and clients
+           
 
-            GameObject stone = Instantiate(stonePref, start.position, arm.rotation);//Start on it not called before the method returns!
-
-
-
-
-            stone.transform.parent = ThrownStonesParent.transform;
             Rigidbody2D rb = stone.GetComponent<Rigidbody2D>();
-
             rb.velocity = (end.position - start.position).normalized * stoneSpeed * Time.fixedDeltaTime / (rb.mass);//same as rb.AddForce(v* stoneSpeed, ForceMode2D.Force);
-
 
             NetworkServer.Spawn(stone);
 
-
-            StartCoroutine(WaitAndDestroy(stone));//1) if didn't collide with anything 2) if collided and was set invisible
+            StartCoroutine(WaitAndUnspawn(stone));//1) if didn't collide with anything 2) if collided and was set invisible
 
         }
 
@@ -204,9 +182,10 @@ public class ThrowStone : NetworkBehaviour {
 
 
 
-    IEnumerator WaitAndDestroy(GameObject obj) {
-        yield return new WaitForSeconds(5f);
-        NetworkServer.Destroy(obj);//destroys both on Server and Client
+    IEnumerator WaitAndUnspawn(GameObject obj) {
+        yield return new WaitForSeconds(3f);
+        ThrownStoneObjectPool.unspawnStone(obj);//on server
+        NetworkServer.UnSpawn(obj);//on clients
     }
 
    
