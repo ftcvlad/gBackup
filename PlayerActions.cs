@@ -95,7 +95,7 @@ public class PlayerActions : NetworkBehaviour {
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.B)) {
+        if (Input.GetKeyDown(KeyCode.S)) {
                 if (!isDraggingBox) {
 
                     GameObject go = checkPlayerOverlapBox(transform,"DraggableBox");
@@ -112,7 +112,7 @@ public class PlayerActions : NetworkBehaviour {
 
         //activate spikes
 
-        if (Input.GetKeyDown(KeyCode.B)) {
+        if (Input.GetKeyDown(KeyCode.S)) {
 
             GameObject go = checkPlayerOverlapBox(transform, "ControlBox");
 

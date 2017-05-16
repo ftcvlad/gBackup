@@ -103,21 +103,26 @@ public class Player : NetworkBehaviour {
     public override void OnStartLocalPlayer() {
         Debug.Log("2.  OnStartLocalPlayer");
 
-        //SEQUENCE:
-        //0 server. Objects initialised on server
-        //1 client. OnStartClient is called for allGM (all objects except player initialised)
-        //2 client. OnStartLocalPlayer on local player
-        //3 client. CmdAddLocalPlayer
-        //4 server. player added to AllPlayerManager.allActivaPlayers
-        //5 server. ag.RpcUpdatePlayerCountFrame can be called because allGM was init on every client
-
 
         CmdAddPlayerOnServer(this.netId);
 
         //GetComponent().material.color = Color.blue;
         allGM.localPlayerNetId = transform.GetComponent<NetworkIdentity>().netId;
 
+
+        StartCoroutine(askPlayerFrameUpdate());
        
+    }
+
+
+    IEnumerator askPlayerFrameUpdate() {
+        yield return new WaitForSeconds(1f);
+        CmdAskPlayerFrameUpdate();
+    }
+
+    [Command]
+    void CmdAskPlayerFrameUpdate() {
+        AllPlayerManager.updatePlayerFrame();
     }
 
     [Command]
@@ -126,6 +131,7 @@ public class Player : NetworkBehaviour {
     }
 
 
+  
 
 
 
@@ -134,7 +140,8 @@ public class Player : NetworkBehaviour {
 
 
 
-    
+
+
     //ACTIVATE/DEACTIVATE PLAYER
 
     [ClientRpc]
@@ -460,7 +467,7 @@ public class Player : NetworkBehaviour {
 
     void blinkPlayer() {
         if (graphics.GetComponent<SpriteRenderer>().color == blinkColor) {
-            graphics.GetComponent<SpriteRenderer>().color = Color.white;
+            graphics.GetComponent<SpriteRenderer>().color = color;
         }
         else {
             graphics.GetComponent<SpriteRenderer>().color = blinkColor;
@@ -474,7 +481,7 @@ public class Player : NetworkBehaviour {
 
     void stopBlinkingPlayer() {
         CancelInvoke("blinkPlayer");
-        graphics.GetComponent<SpriteRenderer>().color = Color.white;
+        graphics.GetComponent<SpriteRenderer>().color = color;
     }
 
 

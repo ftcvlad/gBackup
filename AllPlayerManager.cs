@@ -50,11 +50,13 @@ public class AllPlayerManager : NetworkBehaviour {
 
 
         //ALLGM NOT SPAWNED WHEN 1 PLAYER WITH LOBBY
-        ag.RpcUpdatePlayerCountFrame(playersActive, playersFinished, playersToNextLevel);
+        //ag.RpcUpdatePlayerCountFrame(playersActive, playersFinished, playersToNextLevel);
        
     }
 
-
+    public static void updatePlayerFrame() {
+        ag.RpcUpdatePlayerCountFrame(playersActive, playersFinished, playersToNextLevel);
+    }
 
 
     static int getPlayersToNextLevel(bool isShop, int activePlayers) {

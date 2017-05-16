@@ -61,7 +61,7 @@ namespace Prototype.NetworkLobby
 
           
             lobbyManager.minPlayers = (playerNumberDropdown.value + 1);
-            //lobbyManager.maxPlayers = (playerNumberDropdown.value + 1);
+             //lobbyManager.maxPlayers = (playerNumberDropdown.value + 1);
 
             lobbyManager.StartMatchMaker();
             lobbyManager.matchMaker.CreateMatch(
